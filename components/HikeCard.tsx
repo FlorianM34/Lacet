@@ -183,71 +183,103 @@ export default function HikeCard({ hike, onSwipeLeft, onSwipeRight, isTop }: Pro
           attributionEnabled={false}
           logoEnabled={false}
         >
-          <Camera centerCoordinate={mapCenter} zoomLevel={11} animationMode="none" />
+          <Camera
+            defaultSettings={{ centerCoordinate: [2.35, 48.85], zoomLevel: 8 }}
+            centerCoordinate={mapCenter}
+            zoomLevel={11}
+            animationMode="none"
+            animationDuration={0}
+          />
         </MapView>
       </View>
 
       {/* Card body */}
       <View style={styles.body}>
-        <Text style={styles.cardTitle} numberOfLines={1}>{hike.title}</Text>
 
-        <View style={styles.locationRow}>
-          <Text style={styles.locationIcon}>📍</Text>
-          <Text style={styles.locationText} numberOfLines={1}>
-            {hike.distance_km} km du départ
-          </Text>
+        {/* Title */}
+        <Text style={styles.cardTitle} numberOfLines={2}>{hike.title}</Text>
+
+        {/* Stats 2×2 grid */}
+        <View style={styles.statsGrid}>
+          <View style={styles.statBox}>
+            <Text style={styles.statBoxValue}>{hike.distance_km} km</Text>
+            <Text style={styles.statBoxLabel}>Distance</Text>
+          </View>
+          <View style={[styles.statBox, styles.statBoxBorderLeft]}>
+            <Text style={styles.statBoxValue}>{formatDuration(hike.duration_min)}</Text>
+            <Text style={styles.statBoxLabel}>Durée</Text>
+          </View>
+          <View style={[styles.statBox, styles.statBoxBorderTop]}>
+            <Text style={styles.statBoxValue}>+{hike.elevation_m} m</Text>
+            <Text style={styles.statBoxLabel}>Dénivelé</Text>
+          </View>
+          <View style={[styles.statBox, styles.statBoxBorderLeft, styles.statBoxBorderTop, placesLeft <= 2 && styles.statBoxUrgent]}>
+            <Text style={[styles.statBoxValue, placesLeft <= 2 && styles.statBoxValueUrgent]}>
+              {placesLeft}/{hike.max_participants}
+            </Text>
+            <Text style={[styles.statBoxLabel, placesLeft <= 2 && styles.statBoxLabelUrgent]}>
+              {placesLeft <= 2 ? "Presque complet" : "Places libre"}
+            </Text>
+          </View>
         </View>
 
-        {/* Stats */}
-        <View style={styles.statsRow}>
-          <View style={styles.stat}>
-            <Text style={styles.statVal}>{hike.distance_km} km</Text>
-            <Text style={styles.statLbl}>distance</Text>
-          </View>
-          <View style={styles.stat}>
-            <Text style={styles.statVal}>{formatDuration(hike.duration_min)}</Text>
-            <Text style={styles.statLbl}>durée</Text>
-          </View>
-          <View style={styles.stat}>
-            <Text style={styles.statVal}>{hike.elevation_m}m</Text>
-            <Text style={styles.statLbl}>dénivelé</Text>
-          </View>
-          <View style={styles.stat}>
-            <Text style={styles.statVal}>{hike.current_count}/{hike.max_participants}</Text>
-            <Text style={styles.statLbl}>places</Text>
+        {/* Date section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Date</Text>
+          <View style={styles.dateRow}>
+            <Text style={styles.dateText}>{formatDate(hike.date_start, hike.date_flexible)}</Text>
+            {hike.date_flexible && (
+              <View style={styles.flexibleBadge}>
+                <Text style={styles.flexibleBadgeText}>Flexible</Text>
+              </View>
+            )}
           </View>
         </View>
 
-        {/* Tags */}
-        <View style={styles.tagsRow}>
-          <View style={styles.tag}>
-            <Text style={styles.tagText}>{formatDate(hike.date_start, hike.date_flexible)}</Text>
+        {/* Description section */}
+        {hike.description ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>À propos</Text>
+            <Text style={styles.description} numberOfLines={2}>{hike.description}</Text>
           </View>
-          <View style={[styles.tag, styles.tagAmber]}>
-            <Text style={[styles.tagText, styles.tagAmberText]}>{levelLabel(hike.level)}</Text>
-          </View>
-          {hike.has_vehicle && (
-            <View style={[styles.tag, styles.tagPurple]}>
-              <Text style={[styles.tagText, styles.tagPurpleText]}>Voiturage</Text>
+        ) : null}
+
+        {/* Niveau & options */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Niveau</Text>
+          <View style={styles.tagsRow}>
+            <View style={[styles.tag, styles.tagAmber]}>
+              <Text style={[styles.tagText, styles.tagAmberText]}>{levelLabel(hike.level)}</Text>
             </View>
-          )}
+            {hike.has_vehicle && (
+              <View style={[styles.tag, styles.tagPurple]}>
+                <Text style={[styles.tagText, styles.tagPurpleText]}>Voiturage 🚗</Text>
+              </View>
+            )}
+          </View>
         </View>
 
-        {/* Organizer */}
-        <View style={styles.organizer}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {creator ? getInitials(creator.display_name) : "?"}
-            </Text>
-          </View>
-          <View style={styles.orgInfo}>
-            <Text style={styles.orgName}>{creator?.display_name ?? "Organisateur"}</Text>
-            <Text style={styles.orgRating}>
-              {creatorAge ? `${creatorAge} ans · ` : ""}
-              {creator ? `${creator.rating_avg.toFixed(1)} · ${creator.rating_count} randos` : ""}
-            </Text>
+        {/* Organisateur section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Organisateur</Text>
+          <View style={styles.organizer}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>
+                {creator ? getInitials(creator.display_name) : "?"}
+              </Text>
+            </View>
+            <View style={styles.orgInfo}>
+              <Text style={styles.orgName}>{creator?.display_name ?? "Organisateur"}</Text>
+              <Text style={styles.orgRating}>
+                {creatorAge ? `${creatorAge} ans` : ""}
+                {creator && creator.rating_count > 0
+                  ? `  ·  ★ ${creator.rating_avg.toFixed(1)}  ·  ${creator.rating_count} rando${creator.rating_count > 1 ? "s" : ""}`
+                  : "  ·  Nouveau"}
+              </Text>
+            </View>
           </View>
         </View>
+
       </View>
     </Animated.View>
   );
@@ -300,32 +332,72 @@ const styles = StyleSheet.create({
   nopeHintText: { fontSize: 13, fontWeight: "500", color: "#A32D2D" },
 
   // Mini map
-  mapArea: { height: 155, backgroundColor: "#e8f0e4" },
+  mapArea: { height: 160, backgroundColor: "#e8f0e4" },
   miniMap: { flex: 1 },
 
   // Body
-  body: { padding: 14, paddingTop: 14, flex: 1 },
-  cardTitle: { fontSize: 16, fontWeight: "500", color: "#1a1a1a", marginBottom: 4 },
+  body: { paddingHorizontal: 14, paddingTop: 12, paddingBottom: 12, flex: 1, gap: 0 },
 
-  locationRow: { flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 12 },
-  locationIcon: { fontSize: 12 },
-  locationText: { fontSize: 12, color: "#888" },
+  cardTitle: { fontSize: 17, fontWeight: "600", color: "#1a1a1a", lineHeight: 22, marginBottom: 10 },
 
-  // Stats
-  statsRow: { flexDirection: "row", gap: 6, marginBottom: 12 },
-  stat: {
-    flex: 1,
-    backgroundColor: "#f5f5f5",
-    borderRadius: 8,
-    paddingVertical: 6,
-    paddingHorizontal: 4,
-    alignItems: "center",
+  // Stats 2×2 grid
+  statsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    borderWidth: 0.5,
+    borderColor: "#e8e8e8",
+    borderRadius: 10,
+    overflow: "hidden",
+    marginBottom: 0,
   },
-  statVal: { fontSize: 13, fontWeight: "500", color: "#1a1a1a" },
-  statLbl: { fontSize: 10, color: "#999", marginTop: 1 },
+  statBox: {
+    width: "50%",
+    paddingVertical: 10,
+    alignItems: "center",
+    backgroundColor: "#fafafa",
+  },
+  statBoxBorderLeft: { borderLeftWidth: 0.5, borderLeftColor: "#e8e8e8" },
+  statBoxBorderTop: { borderTopWidth: 0.5, borderTopColor: "#e8e8e8" },
+  statBoxUrgent: { backgroundColor: "#FFF8ED" },
+  statBoxValue: { fontSize: 16, fontWeight: "600", color: "#1a1a1a" },
+  statBoxValueUrgent: { color: "#B45309" },
+  statBoxLabel: { fontSize: 10, color: "#999", marginTop: 2 },
+  statBoxLabelUrgent: { color: "#D97706" },
+
+  // Sections
+  section: {
+    borderTopWidth: 0.5,
+    borderTopColor: "#ececec",
+    paddingTop: 9,
+    marginTop: 9,
+  },
+  sectionLabel: {
+    fontSize: 9,
+    fontWeight: "700",
+    color: "#bbb",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+    marginBottom: 5,
+  },
+
+  // Date
+  dateRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  dateText: { fontSize: 12, fontWeight: "500", color: "#1a1a1a" },
+  flexibleBadge: {
+    backgroundColor: "#E1F5EE",
+    borderWidth: 0.5,
+    borderColor: "#9FE1CB",
+    borderRadius: 20,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  flexibleBadgeText: { fontSize: 10, color: "#085041", fontWeight: "500" },
+
+  // Description preview
+  description: { fontSize: 12, color: "#666", lineHeight: 17, fontWeight: "500" },
 
   // Tags
-  tagsRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 12 },
+  tagsRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
   tag: {
     paddingHorizontal: 8,
     paddingVertical: 3,
@@ -345,9 +417,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    paddingTop: 10,
-    borderTopWidth: 0.5,
-    borderTopColor: "#e0e0e0",
   },
   avatar: {
     width: 28,

@@ -212,6 +212,7 @@ export default function CreateScreen() {
       ]);
       resetForm();
     } catch (error: any) {
+      console.error("Publish error:", JSON.stringify(error));
       Alert.alert("Erreur", error?.message ?? "Impossible de publier la randonnée.");
     } finally {
       setPublishing(false);

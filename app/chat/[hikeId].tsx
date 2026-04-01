@@ -278,23 +278,32 @@ export default function ChatScreen() {
     >
       {/* Hike banner */}
       {hike && (
-        <TouchableOpacity
-          style={styles.banner}
-          onPress={() => router.push({ pathname: "/hike/[id]", params: { id: hike.id } })}
-        >
-          <View style={styles.bannerIcon}>
-            <Text style={styles.bannerIconText}>🏔️</Text>
-          </View>
-          <View style={styles.bannerContent}>
-            <Text style={styles.bannerTitle} numberOfLines={1}>
-              Voir l'itinéraire
-            </Text>
-            <Text style={styles.bannerSub}>
-              {hike.distance_km} km · {hike.elevation_m} m · {levelLabels[hike.level] ?? hike.level}
-            </Text>
-          </View>
-          <Text style={styles.bannerChevron}>›</Text>
-        </TouchableOpacity>
+        <View style={styles.bannerWrapper}>
+          <TouchableOpacity
+            style={styles.banner}
+            onPress={() => router.push({ pathname: "/hike/[id]", params: { id: hike.id } })}
+          >
+            <View style={styles.bannerIcon}>
+              <Text style={styles.bannerIconText}>🏔️</Text>
+            </View>
+            <View style={styles.bannerContent}>
+              <Text style={styles.bannerTitle} numberOfLines={1}>
+                Voir l'itinéraire
+              </Text>
+              <Text style={styles.bannerSub}>
+                {hike.distance_km} km · {hike.elevation_m} m · {levelLabels[hike.level] ?? hike.level}
+              </Text>
+            </View>
+            <Text style={styles.bannerChevron}>›</Text>
+          </TouchableOpacity>
+          {hike.status === "cancelled" && (
+            <View style={styles.cancelledNotice}>
+              <Text style={styles.cancelledNoticeText}>
+                ⚠️  Cette randonnée a été annulée par l'organisateur.
+              </Text>
+            </View>
+          )}
+        </View>
       )}
 
       {/* Members row */}
@@ -389,18 +398,30 @@ const styles = StyleSheet.create({
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
 
   // Banner
+  bannerWrapper: { marginHorizontal: 14, marginTop: 10 },
   banner: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    marginHorizontal: 14,
-    marginTop: 10,
     backgroundColor: "#E1F5EE",
     borderWidth: 0.5,
     borderColor: "#9FE1CB",
     borderRadius: 10,
+    borderBottomLeftRadius: 10,
+    borderBottomRightRadius: 10,
     padding: 10,
   },
+  cancelledNotice: {
+    backgroundColor: "#FFF5F5",
+    borderWidth: 0.5,
+    borderTopWidth: 0,
+    borderColor: "#F4A8A8",
+    borderBottomLeftRadius: 10,
+    borderBottomRightRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  cancelledNoticeText: { fontSize: 12, color: "#A32D2D" },
   bannerIcon: {
     width: 32,
     height: 32,

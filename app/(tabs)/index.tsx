@@ -57,6 +57,7 @@ export default function ExploreScreen() {
         return;
       }
       const loc = await Location.getCurrentPositionAsync({});
+      console.log("[Explorer] Position GPS:", loc.coords.latitude, loc.coords.longitude);
       setLocation({ lng: loc.coords.longitude, lat: loc.coords.latitude });
     })();
   }, []);
@@ -68,6 +69,22 @@ export default function ExploreScreen() {
     setLoading(true);
     try {
       const radiusMeters = filters.radiusKm * 1000;
+      console.log("[Explorer] Recherche — lat:", location.lat, "lng:", location.lng, "rayon:", filters.radiusKm, "km");
+
+      // Log toutes les randos existantes (hors filtre)
+      const { data: allHikes } = await supabase.rpc("get_nearby_hikes", {
+        user_lng: location.lng,
+        user_lat: location.lat,
+        radius_meters: 999999999,
+        filter_level: null,
+        filter_date_range: "all",
+        current_user_id: null,
+      });
+      console.log("[Explorer] Toutes les randos en base:", (allHikes as any[])?.length ?? 0);
+      (allHikes as any[])?.forEach((h: any) => {
+        const coords = h.start_location?.coordinates;
+        console.log(`[Explorer] "${h.title}" — lng: ${coords?.[0]} lat: ${coords?.[1]}`);
+      });
 
       // Build date filter
       let dateFilter = "";
@@ -96,6 +113,7 @@ export default function ExploreScreen() {
 
       if (error) throw error;
 
+      console.log("[Explorer] Résultats RPC:", (data as any[])?.length ?? 0, "rando(s) (randos où tu participes déjà exclues)");
       setHikes((data as HikeWithCreator[]) ?? []);
       setCurrentIndex(0);
     } catch (error: any) {

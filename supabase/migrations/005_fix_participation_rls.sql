@@ -18,10 +18,11 @@ AS $$
   );
 $$;
 
--- Drop the recursive policy and replace it
-DROP POLICY IF EXISTS "Participations: lecture pour tous les authentifiés" ON participation;
+-- Drop the recursive policy (exact name from 001_initial_schema.sql)
+DROP POLICY IF EXISTS "Participations: lecture par les membres du groupe" ON participation;
 
-CREATE POLICY "Participations: lecture pour les membres du groupe"
+-- Recreate it using the SECURITY DEFINER function to break the recursion
+CREATE POLICY "Participations: lecture par les membres du groupe"
   ON participation FOR SELECT
   TO authenticated
   USING (is_hike_member(hike_id));

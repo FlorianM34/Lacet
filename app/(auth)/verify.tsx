@@ -60,9 +60,9 @@ export default function VerifyScreen() {
 
       if (profile) {
         router.replace("/(tabs)");
-      } else {
-        router.replace("/(auth)/onboarding");
       }
+      // Pas de navigation ici si pas de profil :
+      // le _layout.tsx détecte session sans profil et redirige vers onboarding automatiquement
     } catch (error: any) {
       let message = "Code invalide. Veuillez réessayer.";
       if (error?.message?.includes("expired")) {
