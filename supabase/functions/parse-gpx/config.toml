@@ -1,0 +1,2 @@
+[functions.parse-gpx]
+verify_jwt = false

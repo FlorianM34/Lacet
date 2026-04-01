@@ -1,0 +1,38 @@
+{
+  "name": "lacet",
+  "version": "1.0.0",
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "web": "expo start --web"
+  },
+  "dependencies": {
+    "@rnmapbox/maps": "^10.2.10",
+    "@supabase/supabase-js": "^2.99.3",
+    "expo": "~55.0.9",
+    "expo-constants": "~55.0.9",
+    "expo-device": "^55.0.10",
+    "expo-document-picker": "~55.0.9",
+    "expo-linking": "~55.0.9",
+    "expo-location": "~55.1.4",
+    "expo-notifications": "~55.0.14",
+    "expo-router": "~55.0.8",
+    "expo-secure-store": "~55.0.9",
+    "expo-status-bar": "~55.0.4",
+    "mapbox-gl": "^2.15.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-native": "^0.83.4",
+    "react-native-gesture-handler": "~2.30.0",
+    "react-native-safe-area-context": "~5.6.2",
+    "react-native-screens": "~4.23.0",
+    "react-native-web": "^0.21.2"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.2",
+    "typescript": "~5.9.2"
+  },
+  "private": true
+}

@@ -1,0 +1,289 @@
+<style>
+.phone {
+  width: 320px; margin: 1.5rem auto;
+  background: var(--color-background-primary);
+  border-radius: 36px;
+  border: 1.5px solid var(--color-border-secondary);
+  overflow: hidden;
+  font-family: var(--font-sans);
+}
+.status-bar {
+  display: flex; justify-content: space-between;
+  padding: 10px 20px 4px;
+  font-size: 11px; font-weight: 500; color: var(--color-text-primary);
+}
+.top-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 18px 12px;
+  border-bottom: 0.5px solid var(--color-border-tertiary);
+}
+.top-title { font-size: 15px; font-weight: 500; color: var(--color-text-primary); }
+.back-btn { font-size: 13px; color: #1D9E75; cursor: pointer; }
+.publish-btn {
+  font-size: 13px; font-weight: 500; color: white;
+  background: #1D9E75; border: none; border-radius: 20px;
+  padding: 5px 14px; cursor: pointer;
+}
+.scroll-body { padding: 16px 16px 24px; display: flex; flex-direction: column; gap: 18px; }
+.section-label {
+  font-size: 11px; font-weight: 500; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--color-text-tertiary);
+  margin-bottom: 8px;
+}
+.field-group { display: flex; flex-direction: column; gap: 8px; }
+.field {
+  background: var(--color-background-secondary);
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: 10px; padding: 10px 12px;
+  font-size: 13px; color: var(--color-text-primary);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.field-placeholder { color: var(--color-text-tertiary); }
+.field-value { color: var(--color-text-primary); font-weight: 500; }
+.field-label { font-size: 12px; color: var(--color-text-secondary); }
+.gpx-zone {
+  border: 1px dashed var(--color-border-secondary);
+  border-radius: 12px; padding: 20px 16px;
+  text-align: center; cursor: pointer;
+  background: var(--color-background-secondary);
+  transition: border-color 0.2s;
+}
+.gpx-zone:hover { border-color: #1D9E75; }
+.gpx-icon {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: #E1F5EE; margin: 0 auto 8px;
+  display: flex; align-items: center; justify-content: center;
+}
+.gpx-title { font-size: 13px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 2px; }
+.gpx-sub { font-size: 11px; color: var(--color-text-tertiary); }
+.gpx-or { font-size: 11px; color: var(--color-text-tertiary); margin: 8px 0; }
+.gpx-alt {
+  font-size: 12px; color: #1D9E75; font-weight: 500; cursor: pointer;
+}
+.stats-preview {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+}
+.stat-pill {
+  background: var(--color-background-secondary);
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: 8px; padding: 8px 6px; text-align: center;
+}
+.stat-pill-val { font-size: 13px; font-weight: 500; color: var(--color-text-primary); }
+.stat-pill-lbl { font-size: 10px; color: var(--color-text-tertiary); margin-top: 1px; }
+.stat-pill.auto { border-color: #9FE1CB; background: #E1F5EE; }
+.stat-pill.auto .stat-pill-val { color: #085041; }
+.stat-pill.auto .stat-pill-lbl { color: #0F6E56; }
+.toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 2px 0;
+}
+.toggle-label { font-size: 13px; color: var(--color-text-primary); }
+.toggle-sub { font-size: 11px; color: var(--color-text-tertiary); margin-top: 1px; }
+.toggle {
+  width: 36px; height: 20px; border-radius: 10px;
+  background: #1D9E75; position: relative; cursor: pointer; flex-shrink: 0;
+}
+.toggle.off { background: var(--color-border-secondary); }
+.toggle-knob {
+  width: 16px; height: 16px; border-radius: 50%;
+  background: white; position: absolute; top: 2px;
+  transition: left 0.2s;
+}
+.toggle.off .toggle-knob { left: 2px; }
+.toggle .toggle-knob { left: 18px; }
+.slider-row { display: flex; align-items: center; gap: 10px; }
+.slider-track {
+  flex: 1; height: 4px; background: var(--color-border-tertiary);
+  border-radius: 2px; position: relative;
+}
+.slider-fill { height: 100%; border-radius: 2px; background: #1D9E75; width: 60%; }
+.slider-thumb {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: white; border: 2px solid #1D9E75;
+  position: absolute; top: -7px; left: calc(60% - 9px);
+}
+.slider-val { font-size: 13px; font-weight: 500; color: var(--color-text-primary); min-width: 28px; text-align: right; }
+.level-row { display: flex; gap: 6px; }
+.level-pill {
+  flex: 1; text-align: center; padding: 7px 4px;
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: 20px; font-size: 12px;
+  color: var(--color-text-secondary); cursor: pointer;
+  background: var(--color-background-secondary);
+}
+.level-pill.active {
+  background: #E1F5EE; color: #085041;
+  border-color: #5DCAA5; font-weight: 500;
+}
+.bottom-nav {
+  display: flex; justify-content: space-around;
+  padding: 10px 0 16px;
+  border-top: 0.5px solid var(--color-border-tertiary);
+}
+.nav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; }
+.nav-dot { width: 5px; height: 5px; border-radius: 50%; background: #1D9E75; }
+.nav-lbl { font-size: 10px; color: var(--color-text-tertiary); }
+.nav-lbl.active { color: #1D9E75; }
+.gpx-loaded { display: none; }
+.map-preview {
+  height: 100px; border-radius: 10px; overflow: hidden;
+  background: #dce8d6; position: relative; margin-bottom: 8px;
+}
+</style>
+
+<div class="phone">
+  <div class="status-bar"><span>9:41</span><span>●●●</span></div>
+  <div class="top-bar">
+    <span class="back-btn">Annuler</span>
+    <span class="top-title">Nouvelle rando</span>
+    <button class="publish-btn">Publier</button>
+  </div>
+
+  <div class="scroll-body">
+
+    <div>
+      <div class="section-label">Tracé</div>
+      <div class="gpx-zone" id="gpx-zone" onclick="loadGpx()">
+        <div class="gpx-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 4v12M8 12l4 4 4-4" stroke="#1D9E75" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 20h16" stroke="#1D9E75" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <div class="gpx-title">Importer un fichier GPX</div>
+        <div class="gpx-sub">Depuis Komoot, AllTrails, Wikiloc…</div>
+        <div class="gpx-or">— ou —</div>
+        <div class="gpx-alt">Dessiner sur la carte</div>
+      </div>
+      <div class="gpx-loaded" id="gpx-loaded">
+        <div class="map-preview">
+          <svg width="100%" height="100%" viewBox="0 0 280 100" fill="none">
+            <rect width="280" height="100" fill="#dce8d6"/>
+            <path d="M20 80 Q70 20 130 40 Q180 58 260 18" stroke="#1D9E75" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="6 3"/>
+            <circle cx="20" cy="80" r="4" fill="#1D9E75" stroke="white" stroke-width="1.5"/>
+            <circle cx="260" cy="18" r="4" fill="#0F6E56" stroke="white" stroke-width="1.5"/>
+          </svg>
+        </div>
+        <div class="stats-preview">
+          <div class="stat-pill auto"><div class="stat-pill-val">12 km</div><div class="stat-pill-lbl">distance</div></div>
+          <div class="stat-pill auto"><div class="stat-pill-val">620 m</div><div class="stat-pill-lbl">dénivelé</div></div>
+          <div class="stat-pill"><div class="stat-pill-val">4h30</div><div class="stat-pill-lbl">durée estimée</div></div>
+        </div>
+        <div style="font-size:11px;color:#1D9E75;margin-top:6px;text-align:right;cursor:pointer;">Changer le tracé</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">Informations</div>
+      <div class="field-group">
+        <div class="field">
+          <span class="field-label">Titre</span>
+          <span class="field-placeholder">Tour du Pic Saint-Loup</span>
+        </div>
+        <div class="field">
+          <span class="field-label">Description</span>
+          <span class="field-placeholder">Optionnel</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">Date</div>
+      <div class="field-group">
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">Date flexible</div>
+            <div class="toggle-sub">Tu précises juste le mois</div>
+          </div>
+          <div class="toggle off" id="date-toggle" onclick="toggleDate()">
+            <div class="toggle-knob"></div>
+          </div>
+        </div>
+        <div class="field" id="date-field">
+          <span class="field-label">Date</span>
+          <span class="field-value">Sam. 5 avril 2025</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">Niveau</div>
+      <div class="level-row">
+        <div class="level-pill" onclick="setLevel(this)">Facile</div>
+        <div class="level-pill active" onclick="setLevel(this)">Intermédiaire</div>
+        <div class="level-pill" onclick="setLevel(this)">Difficile</div>
+        <div class="level-pill" onclick="setLevel(this)">Expert</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">Groupe</div>
+      <div class="field-group">
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+            <span class="field-label" style="font-size:13px;color:var(--color-text-primary);">Nombre de participants</span>
+            <span class="field-value" id="pax-val">3</span>
+          </div>
+          <div class="slider-row">
+            <span style="font-size:11px;color:var(--color-text-tertiary);">2</span>
+            <input type="range" min="2" max="12" value="3" style="flex:1;" oninput="document.getElementById('pax-val').textContent=this.value">
+            <span style="font-size:11px;color:var(--color-text-tertiary);">12</span>
+          </div>
+        </div>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">Voiturage proposé</div>
+            <div class="toggle-sub">Tu peux emmener des gens</div>
+          </div>
+          <div class="toggle" id="car-toggle" onclick="toggleCar()">
+            <div class="toggle-knob"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-item">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5" opacity=".4"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5" opacity=".4"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5" opacity=".4"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5" opacity=".4"/></svg>
+      <span class="nav-lbl">Explorer</span>
+    </div>
+    <div class="nav-item">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.5" opacity=".4"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.5" opacity=".4"/></svg>
+      <span class="nav-lbl">Groupes</span>
+    </div>
+    <div class="nav-item">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#1D9E75" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <span class="nav-lbl active">Créer</span>
+      <div class="nav-dot"></div>
+    </div>
+    <div class="nav-item">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.5" opacity=".4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="1.5" opacity=".4"/></svg>
+      <span class="nav-lbl">Profil</span>
+    </div>
+  </div>
+</div>
+
+<script>
+function loadGpx() {
+  document.getElementById('gpx-zone').style.display = 'none';
+  document.getElementById('gpx-loaded').style.display = 'block';
+}
+function toggleDate() {
+  const t = document.getElementById('date-toggle');
+  const f = document.getElementById('date-field');
+  t.classList.toggle('off');
+  if (!t.classList.contains('off')) {
+    f.querySelector('.field-value').textContent = 'Avril 2025';
+    f.querySelector('.field-label').textContent = 'Mois';
+  } else {
+    f.querySelector('.field-value').textContent = 'Sam. 5 avril 2025';
+    f.querySelector('.field-label').textContent = 'Date';
+  }
+}
+function toggleCar() {
+  document.getElementById('car-toggle').classList.toggle('off');
+}
+function setLevel(el) {
+  document.querySelectorAll('.level-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+}
+</script>
