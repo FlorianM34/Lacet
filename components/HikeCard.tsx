@@ -81,6 +81,12 @@ export default function HikeCard({ hike, onSwipeLeft, onSwipeRight, isTop }: Pro
     extrapolate: "clamp",
   });
 
+  const cardBg = translateX.interpolate({
+    inputRange: [-120, 0, 120],
+    outputRange: ["rgb(246, 217, 210)", "#FFFFFF", "#e5fdf6"],
+    extrapolate: "clamp",
+  });
+
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => isTop,
@@ -151,7 +157,7 @@ export default function HikeCard({ hike, onSwipeLeft, onSwipeRight, isTop }: Pro
   const creatorAge = creator?.birth_date ? getAge(creator.birth_date) : null;
 
   const cardStyle = isTop
-    ? { transform: [{ translateX }, { rotate }] }
+    ? { transform: [{ translateX }, { rotate }], backgroundColor: cardBg }
     : { transform: [{ scale: 0.95 }, { translateY: 8 }] };
 
   return (
@@ -299,7 +305,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 18,
     borderWidth: 0.5,
-    borderColor: "#e0e0e0",
+    borderColor: "#1D9E75",
     overflow: "hidden",
   },
 

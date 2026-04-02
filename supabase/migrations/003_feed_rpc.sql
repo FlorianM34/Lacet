@@ -55,7 +55,11 @@ BEGIN
     FROM hike h
     JOIN "user" u ON u.id = h.creator_id
     WHERE h.status = 'open'
-      AND h.date_start >= date_from
+      AND (
+        (h.date_flexible = false AND h.date_start >= date_from)
+        OR
+        (h.date_flexible = true AND date_trunc('month', h.date_start) >= date_trunc('month', CURRENT_DATE))
+      )
       AND ST_DWithin(
         h.start_location,
         ST_SetSRID(ST_MakePoint(user_lng, user_lat), 4326)::geography,

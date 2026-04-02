@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,12 +8,15 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  Modal,
+  Animated,
 } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
 import * as Location from "expo-location";
 import { router } from "expo-router";
 import { supabase } from "../../lib/supabase";
 import { useSessionContext } from "../../hooks/SessionContext";
+import { Calendar } from "react-native-calendars";
 import type { HikeLevel } from "../../types";
 
 const GREEN = "#1D9E75";
@@ -63,6 +66,7 @@ export default function CreateScreen() {
   const [hasVehicle, setHasVehicle] = useState(true);
 
   const [publishing, setPublishing] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const handlePickGPX = async () => {
     const result = await DocumentPicker.getDocumentAsync({
@@ -238,12 +242,8 @@ export default function CreateScreen() {
   const gpxLoaded = gpxFileName !== null && !parsing;
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      keyboardShouldPersistTaps="handled"
-    >
-      {/* ── Top bar ── */}
+    <View style={styles.container}>
+      {/* ── Top bar (sticky) ── */}
       <View style={styles.topBar}>
         <TouchableOpacity onPress={resetForm}>
           <Text style={styles.cancelBtn}>Annuler</Text>
@@ -262,6 +262,11 @@ export default function CreateScreen() {
         </TouchableOpacity>
       </View>
 
+    <ScrollView
+      style={styles.scroll}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+    >
       {/* ── Tracé ── */}
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Tracé</Text>
@@ -338,21 +343,47 @@ export default function CreateScreen() {
               <Text style={styles.toggleLabel}>Date flexible</Text>
               <Text style={styles.toggleSub}>Tu précises juste le mois</Text>
             </View>
-            <Toggle value={dateFlexible} onChange={setDateFlexible} />
-          </View>
-          <View style={[styles.fieldRow, { borderTopWidth: 0.5, borderTopColor: "#E8E8E8" }]}>
-            <Text style={styles.fieldLabel}>{dateFlexible ? "Mois" : "Date"}</Text>
-            <TextInput
-              style={styles.fieldInput}
-              value={dateStart}
-              onChangeText={setDateStart}
-              placeholder={dateFlexible ? "Avril 2025" : "Sam. 5 avril 2025"}
-              placeholderTextColor="#B0B0B0"
-              editable={!dateFlexible}
+            <Toggle
+              value={dateFlexible}
+              onChange={(v) => {
+                setDateFlexible(v);
+                setDateStart("");
+              }}
             />
           </View>
+          <TouchableOpacity
+            style={[styles.fieldRow, { borderTopWidth: 0.5, borderTopColor: "#E8E8E8" }]}
+            onPress={() => setShowDatePicker(true)}
+          >
+            <Text style={styles.fieldLabel}>{dateFlexible ? "Mois" : "Date"}</Text>
+            <Text style={[styles.fieldInput, !dateStart && { color: "#B0B0B0" }]}>
+              {dateStart
+                ? formatDateDisplay(dateStart, dateFlexible)
+                : dateFlexible
+                ? "Choisir un mois"
+                : "Choisir une date"}
+            </Text>
+            <Text style={styles.dateChevron}>›</Text>
+          </TouchableOpacity>
         </View>
       </View>
+
+      {/* ── Date picker modal ── */}
+      <BottomSheet visible={showDatePicker} onClose={() => setShowDatePicker(false)}>
+        {dateFlexible ? (
+          <MonthPicker
+            selected={dateStart}
+            onSelect={(iso) => { setDateStart(iso); setShowDatePicker(false); }}
+            onClose={() => setShowDatePicker(false)}
+          />
+        ) : (
+          <CalendarPicker
+            selected={dateStart}
+            onSelect={(iso) => { setDateStart(iso); setShowDatePicker(false); }}
+            onClose={() => setShowDatePicker(false)}
+          />
+        )}
+      </BottomSheet>
 
       {/* ── Niveau ── */}
       <View style={styles.section}>
@@ -416,6 +447,7 @@ export default function CreateScreen() {
         </View>
       </View>
     </ScrollView>
+    </View>
   );
 }
 
@@ -448,6 +480,160 @@ function UploadIcon() {
   );
 }
 
+function BottomSheet({ visible, onClose, children }: {
+  visible: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  const slideY = useRef(new Animated.Value(500)).current;
+
+  useEffect(() => {
+    if (visible) {
+      Animated.spring(slideY, {
+        toValue: 0,
+        useNativeDriver: true,
+        bounciness: 4,
+      }).start();
+    } else {
+      slideY.setValue(500);
+    }
+  }, [visible]);
+
+  return (
+    <Modal visible={visible} transparent animationType="fade">
+      <View style={styles.modalOverlay}>
+        <Animated.View style={[styles.modalSheet, { transform: [{ translateY: slideY }] }]}>
+          <View style={styles.modalHandle} />
+          {children}
+        </Animated.View>
+      </View>
+    </Modal>
+  );
+}
+
+// ── Date helpers ──
+
+const MONTHS_LONG = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+const MONTHS_SHORT = ["Jan.", "Fév.", "Mars", "Avr.", "Mai", "Juin", "Juil.", "Août", "Sep.", "Oct.", "Nov.", "Déc."];
+
+function formatDateDisplay(iso: string, flexible: boolean): string {
+  const d = new Date(iso + "T00:00:00");
+  if (flexible) return `${MONTHS_LONG[d.getMonth()]} ${d.getFullYear()}`;
+  const days = ["Dim.", "Lun.", "Mar.", "Mer.", "Jeu.", "Ven.", "Sam."];
+  return `${days[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+// ── Calendar picker (fixed date) ──
+
+function CalendarPicker({ selected, onSelect, onClose }: {
+  selected: string;
+  onSelect: (iso: string) => void;
+  onClose: () => void;
+}) {
+  const today = new Date().toISOString().split("T")[0];
+  const markedDates = useMemo(() => {
+    if (!selected) return {};
+    return { [selected]: { selected: true, selectedColor: GREEN } };
+  }, [selected]);
+
+  return (
+    <View>
+      <View style={calStyles.pickerHeader}>
+        <Text style={calStyles.pickerTitle}>Choisir une date</Text>
+        <TouchableOpacity onPress={onClose}>
+          <Text style={calStyles.pickerClose}>Annuler</Text>
+        </TouchableOpacity>
+      </View>
+      <Calendar
+        current={selected || today}
+        minDate={today}
+        markedDates={markedDates}
+        onDayPress={(day: { dateString: string }) => {
+          onSelect(day.dateString);
+        }}
+        firstDay={1}
+        theme={{
+          selectedDayBackgroundColor: GREEN,
+          selectedDayTextColor: "#fff",
+          todayTextColor: GREEN,
+          arrowColor: GREEN,
+          monthTextColor: "#1A1A1A",
+          textDayFontSize: 14,
+          textMonthFontSize: 15,
+          textMonthFontWeight: "600",
+          textDayHeaderFontSize: 11,
+          textDayHeaderFontWeight: "500",
+          dayTextColor: "#1A1A1A",
+          textDisabledColor: "#CCCCCC",
+        }}
+      />
+    </View>
+  );
+}
+
+// ── Month picker (flexible date) ──
+
+function MonthPicker({ selected, onSelect, onClose }: {
+  selected: string;
+  onSelect: (iso: string) => void;
+  onClose: () => void;
+}) {
+  const today = new Date();
+  const [viewYear, setViewYear] = useState(today.getFullYear());
+
+  const selMonth = selected ? new Date(selected + "T00:00:00").getMonth() : null;
+  const selYear = selected ? new Date(selected + "T00:00:00").getFullYear() : null;
+
+  const isPastMonth = (month: number) =>
+    viewYear < today.getFullYear() ||
+    (viewYear === today.getFullYear() && month < today.getMonth());
+
+  return (
+    <View>
+      <View style={calStyles.pickerHeader}>
+        <Text style={calStyles.pickerTitle}>Choisir un mois</Text>
+        <TouchableOpacity onPress={onClose}>
+          <Text style={calStyles.pickerClose}>Annuler</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={calStyles.navRow}>
+        <TouchableOpacity style={calStyles.navBtn} onPress={() => setViewYear(y => y - 1)}>
+          <Text style={calStyles.navArrow}>‹</Text>
+        </TouchableOpacity>
+        <Text style={calStyles.navLabel}>{viewYear}</Text>
+        <TouchableOpacity style={calStyles.navBtn} onPress={() => setViewYear(y => y + 1)}>
+          <Text style={calStyles.navArrow}>›</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={calStyles.monthGrid}>
+        {MONTHS_SHORT.map((name, i) => {
+          const past = isPastMonth(i);
+          const sel = i === selMonth && viewYear === selYear;
+          const curMonth = i === today.getMonth() && viewYear === today.getFullYear();
+          return (
+            <TouchableOpacity
+              key={i}
+              style={[calStyles.monthCell, sel && calStyles.monthCellSel, curMonth && !sel && calStyles.monthCellCur]}
+              onPress={() => {
+                if (past) return;
+                const iso = `${viewYear}-${String(i + 1).padStart(2, "0")}-01`;
+                onSelect(iso);
+              }}
+              disabled={past}
+            >
+              <Text style={[calStyles.monthText, past && calStyles.monthTextPast, sel && calStyles.monthTextSel]}>
+                {name}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
 // ── Helpers ──
 
 async function getCurrentLocation(): Promise<[number, number]> {
@@ -461,6 +647,7 @@ async function getCurrentLocation(): Promise<[number, number]> {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#FAFAFA" },
+  scroll: { flex: 1 },
   content: { paddingBottom: 40 },
 
   // Top bar
@@ -597,6 +784,32 @@ const styles = StyleSheet.create({
   levelPillText: { fontSize: 12, color: "#6A6A6A" },
   levelPillTextActive: { color: GREEN_DARK, fontWeight: "500" },
 
+  // Date button
+  dateChevron: { fontSize: 18, color: "#CACACA", marginLeft: 4 },
+
+  // Date picker modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    justifyContent: "flex-end",
+  },
+  modalSheet: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 18,
+    paddingBottom: 36,
+    paddingTop: 12,
+  },
+  modalHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "#E0E0E0",
+    alignSelf: "center",
+    marginBottom: 16,
+  },
+
   // Slider
   participantVal: { fontSize: 13, fontWeight: "500", color: "#1A1A1A" },
   sliderRow: { flexDirection: "row", alignItems: "center", gap: 8 },
@@ -620,4 +833,48 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   sliderFill: { height: "100%", backgroundColor: GREEN, borderRadius: 2 },
+});
+
+const calStyles = StyleSheet.create({
+  pickerHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  pickerTitle: { fontSize: 15, fontWeight: "600", color: "#1A1A1A" },
+  pickerClose: { fontSize: 14, color: GREEN },
+
+  navRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 14,
+  },
+  navBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#F5F5F5",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  navArrow: { fontSize: 20, color: "#555", lineHeight: 24 },
+  navLabel: { fontSize: 15, fontWeight: "600", color: "#1A1A1A" },
+
+  // Month picker
+  monthGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  monthCell: {
+    width: "22%",
+    flexGrow: 1,
+    paddingVertical: 12,
+    alignItems: "center",
+    borderRadius: 10,
+    backgroundColor: "#F5F5F5",
+  },
+  monthCellSel: { backgroundColor: GREEN },
+  monthCellCur: { borderWidth: 1.5, borderColor: GREEN, backgroundColor: "#E1F5EE" },
+  monthText: { fontSize: 13, fontWeight: "500", color: "#1A1A1A" },
+  monthTextPast: { color: "#CCCCCC" },
+  monthTextSel: { color: "#fff" },
 });
