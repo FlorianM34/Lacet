@@ -380,7 +380,7 @@ export default function HikeDetailScreen() {
       )}
 
       {/* ── Annuler (acteur uniquement, rando non annulée) ── */}
-      {isActor && hike.status !== "cancelled" && (
+      {isActor && hike.status !== "cancelled" && hike.status !== "completed" && (
         <TouchableOpacity
           style={styles.cancelBtn}
           onPress={handleCancel}

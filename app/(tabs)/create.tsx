@@ -37,6 +37,8 @@ interface ParsedGPXResult {
   elevation_m: number;
   duration_min: number;
   coordinates: [number, number][];
+  name?: string;
+  description?: string;
 }
 
 function formatDuration(min: number) {
@@ -48,6 +50,8 @@ function formatDuration(min: number) {
 export default function CreateScreen() {
   const { session } = useSessionContext();
 
+  const [inputMode, setInputMode] = useState<"gpx" | "manual">("gpx");
+
   const [gpxFileName, setGpxFileName] = useState<string | null>(null);
   const [gpxFileUri, setGpxFileUri] = useState<string | null>(null);
   const [parsing, setParsing] = useState(false);
@@ -56,6 +60,12 @@ export default function CreateScreen() {
   const [distanceKm, setDistanceKm] = useState<number | null>(null);
   const [elevationM, setElevationM] = useState<number | null>(null);
   const [durationMin, setDurationMin] = useState<number | null>(null);
+
+  const [manualLat, setManualLat] = useState("");
+  const [manualLon, setManualLon] = useState("");
+  const [manualDistance, setManualDistance] = useState("");
+  const [manualDuration, setManualDuration] = useState("");
+  const [manualElevation, setManualElevation] = useState("");
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -110,6 +120,8 @@ export default function CreateScreen() {
       setDistanceKm(parsed.distance_km);
       setElevationM(parsed.elevation_m);
       setDurationMin(parsed.duration_min);
+      if (parsed.name && !title.trim()) setTitle(parsed.name);
+      if (parsed.description && !description.trim()) setDescription(parsed.description);
     } catch (error: any) {
       Alert.alert("Erreur GPX", error?.message ?? "Impossible de parser le fichier GPX.");
       setGpxFileName(null);
@@ -128,6 +140,20 @@ export default function CreateScreen() {
     setDurationMin(null);
   };
 
+  const resetTrace = () => {
+    setCoordinates([]);
+    setDistanceKm(null);
+    setElevationM(null);
+    setDurationMin(null);
+    setGpxFileName(null);
+    setGpxFileUri(null);
+    setManualLat("");
+    setManualLon("");
+    setManualDistance("");
+    setManualDuration("");
+    setManualElevation("");
+  };
+
   const handlePublish = async () => {
     if (!title.trim()) {
       Alert.alert("Erreur", "Le titre est obligatoire.");
@@ -137,17 +163,45 @@ export default function CreateScreen() {
       Alert.alert("Erreur", "Indiquez une date ou activez la date flexible.");
       return;
     }
-    if (coordinates.length < 2) {
-      Alert.alert("Erreur", "Importez un fichier GPX pour définir le tracé.");
-      return;
+
+    let startLng: number, startLat: number;
+    let finalDistance: number, finalDuration: number, finalElevation: number;
+
+    if (inputMode === "gpx") {
+      if (coordinates.length < 2) {
+        Alert.alert("Erreur", "Importez un fichier GPX pour définir le tracé.");
+        return;
+      }
+      [startLng, startLat] = coordinates[0];
+      finalDistance = distanceKm ?? 0;
+      finalDuration = durationMin ?? 0;
+      finalElevation = elevationM ?? 0;
+    } else {
+      const parsedLat = parseFloat(manualLat.replace(",", "."));
+      const parsedLon = parseFloat(manualLon.replace(",", "."));
+      const parsedDist = parseFloat(manualDistance.replace(",", "."));
+      const parsedDur = parseInt(manualDuration, 10);
+      const parsedElev = parseFloat(manualElevation.replace(",", "."));
+
+      if (isNaN(parsedLat) || parsedLat < -90 || parsedLat > 90 ||
+          isNaN(parsedLon) || parsedLon < -180 || parsedLon > 180 ||
+          isNaN(parsedDist) || parsedDist <= 0 ||
+          isNaN(parsedDur) || parsedDur <= 0 ||
+          isNaN(parsedElev) || parsedElev < 0) {
+        Alert.alert("Erreur", "Vérifiez les valeurs saisies (coordonnées, distance, durée, dénivelé).");
+        return;
+      }
+      startLng = parsedLon;
+      startLat = parsedLat;
+      finalDistance = parsedDist;
+      finalDuration = parsedDur;
+      finalElevation = parsedElev;
     }
 
     setPublishing(true);
     try {
       const userId = session?.user?.id;
       if (!userId) throw new Error("Session introuvable.");
-
-      const [lng, lat] = coordinates[0];
 
       let gpxUrl: string | null = null;
       if (gpxFileUri && gpxFileName) {
@@ -177,11 +231,11 @@ export default function CreateScreen() {
           creator_id: userId,
           title: title.trim(),
           description: description.trim() || null,
-          start_location: `SRID=4326;POINT(${lng} ${lat})`,
+          start_location: `SRID=4326;POINT(${startLng} ${startLat})`,
           gpx_url: gpxUrl,
-          distance_km: distanceKm,
-          duration_min: durationMin ?? 0,
-          elevation_m: elevationM ?? 0,
+          distance_km: finalDistance,
+          duration_min: finalDuration,
+          elevation_m: finalElevation,
           level,
           date_start: hikeDate,
           date_flexible: dateFlexible,
@@ -224,15 +278,14 @@ export default function CreateScreen() {
     setLevel("intermediate");
     setMaxParticipants(3);
     setHasVehicle(true);
-    setCoordinates([]);
-    setDistanceKm(null);
-    setElevationM(null);
-    setDurationMin(null);
-    setGpxFileName(null);
-    setGpxFileUri(null);
+    setInputMode("gpx");
+    resetTrace();
   };
 
   const gpxLoaded = gpxFileName !== null && !parsing;
+  const manualFilled =
+    manualLat.trim() && manualLon.trim() && manualDistance.trim() &&
+    manualDuration.trim() && manualElevation.trim();
 
   return (
     <View style={styles.container}>
@@ -264,37 +317,148 @@ export default function CreateScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Tracé</Text>
 
-        {!gpxLoaded && !parsing && (
-          <TouchableOpacity style={styles.gpxZone} onPress={handlePickGPX}>
-            <View style={styles.gpxIcon}>
-              <UploadIcon />
-            </View>
-            <Text style={styles.gpxTitle}>Importer un fichier GPX</Text>
-            <Text style={styles.gpxSub}>Depuis Komoot, AllTrails, Wikiloc…</Text>
+        {/* Toggle GPX / Manuel */}
+        <View style={[styles.levelRow, { marginBottom: 12 }]}>
+          <TouchableOpacity
+            style={[styles.levelPill, inputMode === "gpx" && styles.levelPillActive]}
+            onPress={() => { setInputMode("gpx"); resetTrace(); }}
+          >
+            <Text style={[styles.levelPillText, inputMode === "gpx" && styles.levelPillTextActive]}>
+              Fichier GPX
+            </Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.levelPill, inputMode === "manual" && styles.levelPillActive]}
+            onPress={() => { setInputMode("manual"); resetTrace(); }}
+          >
+            <Text style={[styles.levelPillText, inputMode === "manual" && styles.levelPillTextActive]}>
+              Saisie manuelle
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Mode GPX */}
+        {inputMode === "gpx" && (
+          <>
+            {!gpxLoaded && !parsing && (
+              <TouchableOpacity style={styles.gpxZone} onPress={handlePickGPX}>
+                <View style={styles.gpxIcon}>
+                  <UploadIcon />
+                </View>
+                <Text style={styles.gpxTitle}>Importer un fichier GPX</Text>
+                <Text style={styles.gpxSub}>Depuis Komoot, AllTrails, Wikiloc…</Text>
+              </TouchableOpacity>
+            )}
+
+            {parsing && (
+              <View style={styles.gpxZone}>
+                <ActivityIndicator color={GREEN} />
+                <Text style={[styles.gpxSub, { marginTop: 8 }]}>Analyse du fichier…</Text>
+              </View>
+            )}
+
+            {gpxLoaded && (
+              <View>
+                <View style={styles.statsRow}>
+                  <StatPill value={`${distanceKm} km`} label="distance" auto />
+                  <StatPill value={`${elevationM} m`} label="dénivelé" auto />
+                  <StatPill value={durationMin ? formatDuration(durationMin) : "--"} label="durée estimée" auto />
+                </View>
+                <TouchableOpacity onPress={handleChangeGPX}>
+                  <Text style={styles.changeTrace}>Changer le tracé</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </>
         )}
 
-        {parsing && (
-          <View style={styles.gpxZone}>
-            <ActivityIndicator color={GREEN} />
-            <Text style={[styles.gpxSub, { marginTop: 8 }]}>Analyse du fichier…</Text>
-          </View>
-        )}
-
-        {gpxLoaded && (
-          <View>
-            <View style={styles.statsRow}>
-              <StatPill value={`${distanceKm} km`} label="distance" auto />
-              <StatPill value={`${elevationM} m`} label="dénivelé" auto />
-              <StatPill
-                value={durationMin ? formatDuration(durationMin) : "--"}
-                label="durée estimée"
-              />
+        {/* Mode manuel */}
+        {inputMode === "manual" && (
+          <>
+            <View style={styles.fieldGroup}>
+              <View style={styles.fieldRow}>
+                <Text style={styles.fieldLabel}>Latitude</Text>
+                <TextInput
+                  style={styles.fieldInput}
+                  value={manualLat}
+                  onChangeText={setManualLat}
+                  placeholder="48.8566"
+                  placeholderTextColor="#B0B0B0"
+                  keyboardType="decimal-pad"
+                />
+              </View>
+              <View style={[styles.fieldRow, { borderTopWidth: 0.5, borderTopColor: "#E8E8E8" }]}>
+                <Text style={styles.fieldLabel}>Longitude</Text>
+                <TextInput
+                  style={styles.fieldInput}
+                  value={manualLon}
+                  onChangeText={setManualLon}
+                  placeholder="2.3522"
+                  placeholderTextColor="#B0B0B0"
+                  keyboardType="decimal-pad"
+                />
+              </View>
+              <TouchableOpacity
+                style={[styles.fieldRow, { borderTopWidth: 0.5, borderTopColor: "#E8E8E8" }]}
+                onPress={async () => {
+                  const [lon, lat] = await getCurrentLocation();
+                  setManualLat(String(lat));
+                  setManualLon(String(lon));
+                }}
+              >
+                <Text style={[styles.fieldLabel, { color: GREEN, width: "auto" as any, flex: 1 }]}>
+                  📍 Utiliser ma position
+                </Text>
+              </TouchableOpacity>
+              <View style={[styles.fieldRow, { borderTopWidth: 0.5, borderTopColor: "#E8E8E8" }]}>
+                <Text style={styles.fieldLabel}>Distance</Text>
+                <TextInput
+                  style={styles.fieldInput}
+                  value={manualDistance}
+                  onChangeText={setManualDistance}
+                  placeholder="12.5"
+                  placeholderTextColor="#B0B0B0"
+                  keyboardType="decimal-pad"
+                />
+                <Text style={styles.fieldUnit}>km</Text>
+              </View>
+              <View style={[styles.fieldRow, { borderTopWidth: 0.5, borderTopColor: "#E8E8E8" }]}>
+                <Text style={styles.fieldLabel}>Durée</Text>
+                <TextInput
+                  style={styles.fieldInput}
+                  value={manualDuration}
+                  onChangeText={setManualDuration}
+                  placeholder="180"
+                  placeholderTextColor="#B0B0B0"
+                  keyboardType="number-pad"
+                />
+                <Text style={styles.fieldUnit}>min</Text>
+              </View>
+              <View style={[styles.fieldRow, { borderTopWidth: 0.5, borderTopColor: "#E8E8E8" }]}>
+                <Text style={styles.fieldLabel}>Dénivelé +</Text>
+                <TextInput
+                  style={styles.fieldInput}
+                  value={manualElevation}
+                  onChangeText={setManualElevation}
+                  placeholder="450"
+                  placeholderTextColor="#B0B0B0"
+                  keyboardType="number-pad"
+                />
+                <Text style={styles.fieldUnit}>m</Text>
+              </View>
             </View>
-            <TouchableOpacity onPress={handleChangeGPX}>
-              <Text style={styles.changeTrace}>Changer le tracé</Text>
-            </TouchableOpacity>
-          </View>
+
+            {manualFilled && (
+              <View style={[styles.statsRow, { marginTop: 10 }]}>
+                <StatPill value={`${manualDistance} km`} label="distance" />
+                <StatPill value={`${manualElevation} m`} label="dénivelé" />
+                <StatPill
+                  value={parseInt(manualDuration, 10) > 0 ? formatDuration(parseInt(manualDuration, 10)) : "--"}
+                  label="durée"
+                />
+              </View>
+            )}
+          </>
         )}
       </View>
 
@@ -740,6 +904,7 @@ const styles = StyleSheet.create({
   },
   fieldLabel: { fontSize: 13, color: "#6A6A6A", width: 80 },
   fieldInput: { flex: 1, fontSize: 13, color: "#1A1A1A", textAlign: "right" },
+  fieldUnit: { fontSize: 12, color: "#9A9A9A", marginLeft: 4 },
 
   // Toggle
   toggleLabel: { fontSize: 13, color: "#1A1A1A" },

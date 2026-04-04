@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -9,9 +9,11 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   AppState,
 } from "react-native";
+import { Calendar } from "react-native-calendars";
 import { useLocalSearchParams, router, useNavigation } from "expo-router";
 import { supabase, markAsRead } from "../../lib/supabase";
 import { useSessionContext } from "../../hooks/SessionContext";
@@ -59,6 +61,8 @@ export default function ChatScreen() {
   const [inputText, setInputText] = useState("");
   const [loading, setLoading] = useState(true);
   const [showRdv, setShowRdv] = useState(false);
+  const [showSetDate, setShowSetDate] = useState(false);
+  const [showPlusMenu, setShowPlusMenu] = useState(false);
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [hasRated, setHasRated] = useState(false);
 
@@ -294,11 +298,22 @@ export default function ChatScreen() {
 
   const isActor = creatorId === userId;
   const placesLeft = hike ? hike.max_participants - hike.current_count : 0;
+
+  const hikeDatePassed = (() => {
+    if (!hike) return false;
+    if (hike.date_flexible && !hike.date_start) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const hikeDay = new Date(hike.date_start + "T00:00:00");
+    return hikeDay <= today;
+  })();
+
   const canComplete =
     isActor &&
     hike != null &&
     (hike.status === "open" || hike.status === "full") &&
-    !hike.rating_triggered_at;
+    !hike.rating_triggered_at &&
+    hikeDatePassed;
 
   const ratableMembers = members.filter((m) => m.id !== userId);
 
@@ -313,6 +328,37 @@ export default function ChatScreen() {
     !hasRated &&
     !hasRatingBotMessage &&
     ratableMembers.length > 0;
+
+  const handlePlusMenu = () => setShowPlusMenu((v) => !v);
+
+  const handleConfirmDate = async (dateStr: string) => {
+    setShowSetDate(false);
+    if (!hikeId) return;
+
+    const { error } = await supabase
+      .from("hike")
+      .update({ date_start: dateStr, date_flexible: false })
+      .eq("id", hikeId);
+
+    if (error) {
+      Alert.alert("Erreur", "Impossible de modifier la date.");
+      return;
+    }
+
+    setHike((h) => h ? { ...h, date_start: dateStr, date_flexible: false } : h);
+
+    const d = new Date(dateStr + "T00:00:00");
+    const days = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
+    const months = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+    const formatted = `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+
+    await supabase.from("group_message").insert({
+      hike_id: hikeId,
+      sender_id: userId,
+      content: JSON.stringify({ type: "date_set", formatted }),
+      is_system: true,
+    });
+  };
 
   const handleCompleteHike = () => {
     Alert.alert(
@@ -437,8 +483,23 @@ export default function ChatScreen() {
             );
           }
 
+          if (item.isSystem) {
+            let parsed: any = null;
+            try { parsed = JSON.parse(item.content); } catch {}
+
+            if (parsed?.type === "date_set") {
+              return (
+                <View style={styles.dateSetCard}>
+                  <Text style={styles.dateSetIcon}>📅</Text>
+                  <Text style={styles.dateSetText}>
+                    Date fixée : <Text style={styles.dateSetBold}>{parsed.formatted}</Text>
+                  </Text>
+                </View>
+              );
+            }
+          }
+
           if (item.isSystem && item.sender_id == null) {
-            // Try to parse as a structured bot message
             let parsed: any = null;
             try { parsed = JSON.parse(item.content); } catch {}
 
@@ -550,14 +611,47 @@ export default function ChatScreen() {
         ) : null}
       />
 
+      {/* Plus menu bubble */}
+      {showPlusMenu && (
+        <>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFillObject}
+            activeOpacity={1}
+            onPress={() => setShowPlusMenu(false)}
+          />
+          <View style={styles.plusMenu}>
+            <TouchableOpacity
+              style={styles.plusMenuItem}
+              onPress={() => { setShowPlusMenu(false); setShowRdv(true); }}
+            >
+              <Text style={styles.plusMenuEmoji}>📍</Text>
+              <Text style={styles.plusMenuLabel}>Point de RDV</Text>
+            </TouchableOpacity>
+            {hike?.date_flexible && (
+              <>
+                <View style={styles.plusMenuDivider} />
+                <TouchableOpacity
+                  style={styles.plusMenuItem}
+                  onPress={() => { setShowPlusMenu(false); setShowSetDate(true); }}
+                >
+                  <Text style={styles.plusMenuEmoji}>📅</Text>
+                  <Text style={styles.plusMenuLabel}>Fixer la date</Text>
+                </TouchableOpacity>
+              </>
+            )}
+            <View style={styles.plusMenuArrow} />
+          </View>
+        </>
+      )}
+
       {/* Input bar */}
       <View style={styles.inputBar}>
         {isActor && (
           <TouchableOpacity
-            style={styles.attachBtn}
-            onPress={() => setShowRdv(true)}
+            style={[styles.attachBtn, showPlusMenu && styles.attachBtnActive]}
+            onPress={handlePlusMenu}
           >
-            <Text style={styles.attachIcon}>+</Text>
+            <Text style={[styles.attachIcon, showPlusMenu && styles.attachIconActive]}>+</Text>
           </TouchableOpacity>
         )}
         <TextInput
@@ -590,6 +684,44 @@ export default function ChatScreen() {
         onClose={() => setShowRatingModal(false)}
         onDone={() => setHasRated(true)}
       />
+
+      {/* Set date modal */}
+      <Modal visible={showSetDate} transparent animationType="slide">
+        <View style={styles.dateModalOverlay}>
+          <View style={styles.dateModalSheet}>
+            <View style={styles.dateModalHandle} />
+            <View style={styles.dateModalHeader}>
+              <Text style={styles.dateModalTitle}>Fixer la date</Text>
+              <TouchableOpacity onPress={() => setShowSetDate(false)}>
+                <Text style={styles.dateModalCancel}>Annuler</Text>
+              </TouchableOpacity>
+            </View>
+            <Calendar
+              minDate={new Date().toISOString().split("T")[0]}
+              markedDates={
+                hike?.date_start && !hike.date_flexible
+                  ? { [hike.date_start]: { selected: true, selectedColor: "#1D9E75" } }
+                  : {}
+              }
+              onDayPress={(day: { dateString: string }) => handleConfirmDate(day.dateString)}
+              firstDay={1}
+              theme={{
+                selectedDayBackgroundColor: "#1D9E75",
+                selectedDayTextColor: "#fff",
+                todayTextColor: "#1D9E75",
+                arrowColor: "#1D9E75",
+                monthTextColor: "#1A1A1A",
+                textDayFontSize: 14,
+                textMonthFontSize: 15,
+                textMonthFontWeight: "600",
+                textDayHeaderFontSize: 11,
+                dayTextColor: "#1A1A1A",
+                textDisabledColor: "#CCCCCC",
+              }}
+            />
+          </View>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -767,8 +899,57 @@ const styles = StyleSheet.create({
     borderTopWidth: 0.5,
     borderTopColor: "#e0e0e0",
   },
-  attachBtn: { padding: 4 },
-  attachIcon: { fontSize: 22, color: "#999", fontWeight: "300" },
+  attachBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#f0f0f0",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  attachBtnActive: { backgroundColor: "#1D9E75" },
+  attachIcon: { fontSize: 20, color: "#666", fontWeight: "300", lineHeight: 24 },
+  attachIconActive: { color: "#fff" },
+
+  // Plus menu bubble
+  plusMenu: {
+    position: "absolute",
+    bottom: 62,
+    left: 14,
+    backgroundColor: "#fff",
+    borderRadius: 14,
+    paddingVertical: 4,
+    minWidth: 180,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+    zIndex: 10,
+  },
+  plusMenuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+  },
+  plusMenuEmoji: { fontSize: 16 },
+  plusMenuLabel: { fontSize: 14, color: "#1a1a1a", fontWeight: "400" },
+  plusMenuDivider: { height: 0.5, backgroundColor: "#e8e8e8", marginHorizontal: 14 },
+  plusMenuArrow: {
+    position: "absolute",
+    bottom: -5,
+    left: 14,
+    width: 10,
+    height: 10,
+    backgroundColor: "#fff",
+    transform: [{ rotate: "45deg" }],
+    shadowColor: "#000",
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+  },
   msgInput: {
     flex: 1,
     backgroundColor: "#f5f5f5",
@@ -789,4 +970,53 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   sendIcon: { fontSize: 14, color: "#fff" },
+
+  // Date set message
+  dateSetCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "center",
+    gap: 6,
+    backgroundColor: "#EEF6FF",
+    borderWidth: 0.5,
+    borderColor: "#BBDEFB",
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginVertical: 6,
+  },
+  dateSetIcon: { fontSize: 13 },
+  dateSetText: { fontSize: 12, color: "#1565C0" },
+  dateSetBold: { fontWeight: "600" },
+
+  // Set date modal
+  dateModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    justifyContent: "flex-end",
+  },
+  dateModalSheet: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 18,
+    paddingBottom: 36,
+    paddingTop: 12,
+  },
+  dateModalHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "#E0E0E0",
+    alignSelf: "center",
+    marginBottom: 16,
+  },
+  dateModalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  dateModalTitle: { fontSize: 15, fontWeight: "600", color: "#1A1A1A" },
+  dateModalCancel: { fontSize: 14, color: "#1D9E75" },
 });

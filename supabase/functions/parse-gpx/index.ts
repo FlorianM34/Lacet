@@ -5,6 +5,8 @@ interface ParsedGPX {
   elevation_m: number;
   duration_min: number;
   coordinates: [number, number][];
+  name?: string;
+  description?: string;
 }
 
 function toRad(deg: number): number {
@@ -88,11 +90,16 @@ function parseGPXContent(xml: string): ParsedGPX {
   // Estimate duration: distance / 3.5 km/h * 60 min
   const durationMin = Math.round((totalDistance / 3.5) * 60);
 
+  const nameMatch = /<name>([^<]+)<\/name>/i.exec(xml);
+  const descMatch = /<desc>([^<]+)<\/desc>/i.exec(xml);
+
   return {
     distance_km: Math.round(totalDistance * 10) / 10,
     elevation_m: Math.round(elevationGain),
     duration_min: durationMin,
     coordinates,
+    name: nameMatch ? nameMatch[1].trim() : undefined,
+    description: descMatch ? descMatch[1].trim() : undefined,
   };
 }
 

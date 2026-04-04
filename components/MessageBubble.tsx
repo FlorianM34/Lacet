@@ -33,32 +33,20 @@ export default function MessageBubble({
   const rdv = isRdvMessage(content);
   const time = formatTime(sentAt);
 
-  // RDV card
+  // RDV pill
   if (rdv) {
     return (
-      <View style={[styles.msgRow, isMine && styles.msgRowMine]}>
-        {!isMine && (
-          <View style={[styles.avatar, { backgroundColor: avatarColor.bg }]}>
-            <Text style={[styles.avatarText, { color: avatarColor.text }]}>
-              {getInitials(senderName)}
-            </Text>
+      <View style={styles.rdvRow}>
+        <View style={styles.rdvPill}>
+          <Text style={styles.rdvPillIcon}>📍</Text>
+          <View style={styles.rdvPillBody}>
+            <Text style={styles.rdvPillLocation}>{rdv.location}</Text>
+            <Text style={styles.rdvPillDatetime}>{rdv.datetime}</Text>
           </View>
-        )}
-        <View>
-          <View style={styles.rdvCard}>
-            <View style={styles.rdvHeader}>
-              <Text style={styles.rdvHeaderIcon}>📍</Text>
-              <Text style={styles.rdvHeaderText}>Point de rendez-vous</Text>
-            </View>
-            <View style={styles.rdvBody}>
-              <Text style={styles.rdvLocation}>{rdv.location}</Text>
-              <Text style={styles.rdvDatetime}>{rdv.datetime}</Text>
-            </View>
-          </View>
-          <Text style={[styles.meta, isMine && styles.metaMine]}>
-            {isMine ? "Toi" : senderName.split(" ")[0]} · {time}
-          </Text>
         </View>
+        <Text style={styles.rdvMeta}>
+          {isMine ? "Toi" : senderName.split(" ")[0]} · {time}
+        </Text>
       </View>
     );
   }
@@ -132,26 +120,23 @@ const styles = StyleSheet.create({
   },
   systemText: { fontSize: 11, color: "#999", textAlign: "center" },
 
-  // RDV card
-  rdvCard: {
-    backgroundColor: "#fff",
-    borderWidth: 0.5,
-    borderColor: "#e0e0e0",
-    borderRadius: 12,
-    overflow: "hidden",
-    maxWidth: 210,
-  },
-  rdvHeader: {
-    backgroundColor: "#E1F5EE",
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+  // RDV pill
+  rdvRow: { alignItems: "center", marginVertical: 6 },
+  rdvPill: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
+    gap: 8,
+    backgroundColor: "#E1F5EE",
+    borderWidth: 0.5,
+    borderColor: "#9FE1CB",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    maxWidth: 260,
   },
-  rdvHeaderIcon: { fontSize: 12 },
-  rdvHeaderText: { fontSize: 11, fontWeight: "500", color: "#085041" },
-  rdvBody: { padding: 10 },
-  rdvLocation: { fontSize: 12, color: "#1a1a1a", marginBottom: 3 },
-  rdvDatetime: { fontSize: 11, color: "#999" },
+  rdvPillIcon: { fontSize: 18 },
+  rdvPillBody: { flexShrink: 1 },
+  rdvPillLocation: { fontSize: 13, fontWeight: "600", color: "#085041" },
+  rdvPillDatetime: { fontSize: 11, color: "#0F6E56", marginTop: 2 },
+  rdvMeta: { fontSize: 10, color: "#999", marginTop: 4 },
 });
