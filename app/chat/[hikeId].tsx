@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -10,10 +10,12 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  AppState,
 } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
-import { supabase } from "../../lib/supabase";
+import { useLocalSearchParams, router, useNavigation } from "expo-router";
+import { supabase, markAsRead } from "../../lib/supabase";
 import { useSessionContext } from "../../hooks/SessionContext";
+import { useUnreadContext } from "../../hooks/UnreadContext";
 import MessageBubble from "../../components/MessageBubble";
 import RdvModal from "../../components/RdvModal";
 import RatingModal from "../../components/RatingModal";
@@ -47,6 +49,8 @@ export default function ChatScreen() {
   const { hikeId } = useLocalSearchParams<{ hikeId: string }>();
   const { session } = useSessionContext();
   const userId = session?.user?.id;
+  const { refetch: refetchUnread } = useUnreadContext();
+  const navigation = useNavigation();
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
@@ -60,6 +64,10 @@ export default function ChatScreen() {
 
   const flatListRef = useRef<FlatList>(null);
   const membersMapRef = useRef<Map<string, string>>(new Map());
+
+  useLayoutEffect(() => {
+    if (hike?.title) navigation.setOptions({ title: hike.title });
+  }, [hike?.title, navigation]);
 
   // ── Load hike info ──
   useEffect(() => {
@@ -147,7 +155,17 @@ export default function ChatScreen() {
 
       setMessages(msgs);
       setLoading(false);
+      markAsRead(hikeId).then(() => refetchUnread());
     })();
+  }, [hikeId]);
+
+  // ── Mark as read when app comes to foreground ──
+  useEffect(() => {
+    if (!hikeId) return;
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") markAsRead(hikeId).then(() => refetchUnread());
+    });
+    return () => sub.remove();
   }, [hikeId]);
 
   // ── Realtime subscription ──
@@ -182,6 +200,7 @@ export default function ChatScreen() {
               },
             ];
           });
+          markAsRead(hikeId!).then(() => refetchUnread());
         }
       )
       .subscribe();

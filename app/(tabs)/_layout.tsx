@@ -1,5 +1,6 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useUnreadContext } from "../../hooks/UnreadContext";
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>["name"];
 
@@ -8,6 +9,8 @@ function tabIcon(focused: boolean, icon: IoniconsName, iconOutline: IoniconsName
 }
 
 export default function TabsLayout() {
+  const { totalUnread } = useUnreadContext();
+
   return (
     <Tabs
       screenOptions={{
@@ -28,6 +31,8 @@ export default function TabsLayout() {
         options={{
           title: "Groupes",
           tabBarIcon: ({ focused }) => tabIcon(focused, "people", "people-outline"),
+          tabBarBadge: totalUnread > 0 ? (totalUnread > 9 ? "9+" : totalUnread) : undefined,
+          tabBarBadgeStyle: { backgroundColor: "#E53935", fontSize: 10, minWidth: 16, height: 16 },
         }}
       />
       <Tabs.Screen

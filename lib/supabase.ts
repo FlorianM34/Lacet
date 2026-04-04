@@ -43,3 +43,12 @@ export async function verifyOTP(phone: string, token: string) {
   if (error) throw error;
   return data;
 }
+
+export async function markAsRead(hikeId: string) {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user?.id) return;
+  await supabase.from("group_read_status").upsert(
+    { user_id: session.user.id, hike_id: hikeId, last_read_at: new Date().toISOString() },
+    { onConflict: "user_id,hike_id" }
+  );
+}

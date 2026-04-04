@@ -24,6 +24,7 @@ export interface User {
   rating_avg: number;
   rating_count: number;
   expo_push_token: string | null;
+  is_banned: boolean;
   created_at: string; // ISO timestamp
 }
 

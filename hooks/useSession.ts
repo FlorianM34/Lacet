@@ -22,6 +22,14 @@ export function useSession(): SessionState {
       .select("*")
       .eq("id", userId)
       .single();
+
+    if ((data as User | null)?.is_banned) {
+      await supabase.auth.signOut();
+      setSession(null);
+      setProfile(null);
+      return;
+    }
+
     setProfile(data as User | null);
   }, []);
 

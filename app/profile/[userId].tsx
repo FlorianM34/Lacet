@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect } from "react";
 import {
   View,
   Text,
@@ -6,9 +6,13 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
+  Alert,
+  ActionSheetIOS,
+  Platform,
 } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
+import { useLocalSearchParams, router, useNavigation } from "expo-router";
 import { supabase } from "../../lib/supabase";
+import { useSessionContext } from "../../hooks/SessionContext";
 import { getAvatarColor, getInitials } from "../../lib/chat";
 import BadgeChip from "../../components/BadgeChip";
 import type { HikeLevel } from "../../types";
@@ -65,13 +69,79 @@ function renderStars(rating: number, size: number = 14) {
   return stars;
 }
 
+const REPORT_REASONS = [
+  "Comportement inapproprié",
+  "Harcèlement",
+  "Spam ou faux profil",
+  "Autre",
+];
+
 export default function PublicProfileScreen() {
   const { userId } = useLocalSearchParams<{ userId: string }>();
+  const { session } = useSessionContext();
+  const navigation = useNavigation();
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [stats, setStats] = useState<PublicStats>({ totalHikes: 0, totalKm: 0, organized: 0 });
   const [reviews, setReviews] = useState<PublicReview[]>([]);
   const [badges, setBadges] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const handleReport = () => {
+    const reporterId = session?.user?.id;
+    if (!reporterId) return;
+
+    const submitReport = async (reason: string) => {
+      const { error } = await supabase.from("report").insert({
+        reporter_id: reporterId,
+        reported_id: userId,
+        reason,
+      });
+      if (error?.code === "23505") {
+        Alert.alert("Déjà signalé", "Tu as déjà signalé cet utilisateur.");
+      } else if (error) {
+        Alert.alert("Erreur", "Impossible d'envoyer le signalement.");
+      } else {
+        Alert.alert("Signalement envoyé", "Merci, notre équipe va examiner ce profil.");
+      }
+    };
+
+    if (Platform.OS === "ios") {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          title: "Signaler cet utilisateur",
+          message: "Quelle est la raison ?",
+          options: [...REPORT_REASONS, "Annuler"],
+          cancelButtonIndex: REPORT_REASONS.length,
+          destructiveButtonIndex: 0,
+        },
+        (index) => {
+          if (index < REPORT_REASONS.length) submitReport(REPORT_REASONS[index]);
+        }
+      );
+    } else {
+      Alert.alert(
+        "Signaler cet utilisateur",
+        "Quelle est la raison ?",
+        [
+          ...REPORT_REASONS.map((reason) => ({
+            text: reason,
+            onPress: () => submitReport(reason),
+          })),
+          { text: "Annuler", style: "cancel" as const },
+        ]
+      );
+    }
+  };
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity onPress={handleReport} style={{ paddingHorizontal: 16, paddingVertical: 8 }}>
+          <Text style={{ fontSize: 22, color: "#555", fontWeight: "900", letterSpacing: 1 }}>⋮</Text>
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, session, userId]);
 
   useEffect(() => {
     if (!userId) return;

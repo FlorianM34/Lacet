@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { SessionProvider, useSessionContext } from "../hooks/SessionContext";
+import { UnreadProvider } from "../hooks/UnreadContext";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
 import {
   registerForPushNotifications,
@@ -54,7 +55,7 @@ function RootNavigator() {
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack screenOptions={{ headerShown: false, headerBackTitle: "Retour" }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="(auth)" />
       <Stack.Screen
@@ -80,7 +81,9 @@ function RootNavigator() {
 export default function RootLayout() {
   return (
     <SessionProvider>
-      <RootNavigator />
+      <UnreadProvider>
+        <RootNavigator />
+      </UnreadProvider>
     </SessionProvider>
   );
 }
