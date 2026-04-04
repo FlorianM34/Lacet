@@ -89,18 +89,11 @@ export default function CreateScreen() {
       const response = await fetch(file.uri);
       const gpxContent = await response.text();
 
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-
       const parseResponse = await fetch(
         `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/parse-gpx`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "text/xml",
-            Authorization: `Bearer ${token}`,
-            apikey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!,
-          },
+          headers: { "Content-Type": "text/xml" },
           body: gpxContent,
         }
       );

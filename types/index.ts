@@ -46,6 +46,8 @@ export interface Hike {
   max_participants: number;
   current_count: number;
   status: HikeStatus;
+  rating_triggered_at: string | null;
+  completed_by: string | null;
   created_at: string; // ISO timestamp
 }
 

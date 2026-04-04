@@ -1,0 +1,334 @@
+<style>
+* { box-sizing: border-box; }
+.phone {
+  width: 300px; margin: 1.5rem auto;
+  background: var(--color-background-primary);
+  border-radius: 36px;
+  border: 1.5px solid var(--color-border-secondary);
+  overflow: hidden;
+  font-family: var(--font-sans);
+  position: relative;
+}
+.status-bar { display:flex; justify-content:space-between; padding:10px 20px 4px; font-size:11px; font-weight:500; color:var(--color-text-primary); }
+.top-bar { display:flex; align-items:center; gap:10px; padding:6px 16px 10px; border-bottom:0.5px solid var(--color-border-tertiary); }
+.group-name { font-size:14px; font-weight:500; color:var(--color-text-primary); }
+.group-meta { font-size:11px; color:var(--color-text-tertiary); }
+.back-btn { color:#1D9E75; }
+
+.messages { padding:12px 14px; display:flex; flex-direction:column; gap:10px; }
+.date-sep { text-align:center; font-size:10px; color:var(--color-text-tertiary); }
+.msg-row { display:flex; align-items:flex-end; gap:6px; }
+.msg-row.mine { flex-direction:row-reverse; }
+.mavatar { width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:500; flex-shrink:0; }
+.bubble { max-width:180px; padding:8px 11px; border-radius:16px; font-size:12px; line-height:1.4; }
+.bubble.theirs { background:var(--color-background-secondary); border:0.5px solid var(--color-border-tertiary); color:var(--color-text-primary); border-bottom-left-radius:4px; }
+.bubble.mine { background:#1D9E75; color:white; border-bottom-right-radius:4px; }
+.bubble-meta { font-size:10px; color:var(--color-text-tertiary); margin-top:2px; padding:0 4px; }
+.bubble-meta.mine { text-align:right; }
+
+.bot-card {
+  background:var(--color-background-primary);
+  border:1px solid #9FE1CB;
+  border-radius:14px; overflow:hidden;
+  margin:4px 0;
+}
+.bot-header {
+  background:#E1F5EE; padding:10px 12px;
+  display:flex; align-items:center; gap:8px;
+}
+.bot-icon {
+  width:28px; height:28px; border-radius:50%;
+  background:#1D9E75; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.bot-title { font-size:12px; font-weight:500; color:#085041; }
+.bot-sub { font-size:10px; color:#0F6E56; margin-top:1px; }
+.bot-body { padding:10px 12px; }
+.bot-body-text { font-size:12px; color:var(--color-text-secondary); line-height:1.5; margin-bottom:10px; }
+.avatars-row { display:flex; gap:4px; margin-bottom:10px; }
+.sm-avatar { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:500; }
+.done-badge { font-size:10px; color:#085041; background:#E1F5EE; border-radius:10px; padding:2px 7px; margin-left:auto; }
+.note-btn {
+  width:100%; padding:9px; border-radius:10px;
+  background:#1D9E75; border:none; cursor:pointer;
+  font-size:12px; font-weight:500; color:white;
+  transition:opacity 0.15s;
+}
+.note-btn:hover { opacity:0.9; }
+.note-btn:disabled { background:var(--color-border-tertiary); color:var(--color-text-tertiary); cursor:default; }
+.note-btn.done { background:#E1F5EE; color:#085041; }
+
+.input-bar {
+  display:flex; align-items:center; gap:8px;
+  padding:8px 14px 10px;
+  border-top:0.5px solid var(--color-border-tertiary);
+}
+.msg-input {
+  flex:1; background:var(--color-background-secondary);
+  border:0.5px solid var(--color-border-tertiary);
+  border-radius:20px; padding:7px 12px;
+  font-size:12px; color:var(--color-text-primary); outline:none;
+}
+
+.sheet-overlay {
+  display:none;
+  position:absolute; inset:0;
+  background:rgba(0,0,0,0.35);
+  border-radius:36px;
+  align-items:flex-end;
+  z-index:10;
+}
+.sheet-overlay.open { display:flex; }
+.sheet {
+  width:100%; background:var(--color-background-primary);
+  border-radius:20px 20px 36px 36px;
+  padding:0 0 28px;
+  overflow:hidden;
+}
+.sheet-handle { width:32px; height:4px; border-radius:2px; background:var(--color-border-secondary); margin:10px auto 0; }
+.sheet-header { padding:14px 18px 10px; border-bottom:0.5px solid var(--color-border-tertiary); }
+.sheet-title { font-size:14px; font-weight:500; color:var(--color-text-primary); }
+.sheet-subtitle { font-size:11px; color:var(--color-text-tertiary); margin-top:2px; }
+.progress-dots { display:flex; gap:5px; margin-top:10px; }
+.dot { width:6px; height:6px; border-radius:50%; background:var(--color-border-tertiary); }
+.dot.active { background:#1D9E75; width:18px; border-radius:3px; }
+.dot.done { background:#9FE1CB; }
+
+.person-card { padding:16px 18px; }
+.person-row { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+.person-avatar { width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:500; }
+.person-name { font-size:14px; font-weight:500; color:var(--color-text-primary); }
+.person-meta { font-size:11px; color:var(--color-text-tertiary); margin-top:1px; }
+.stars-row { display:flex; gap:8px; justify-content:center; margin:0 0 16px; }
+.star-btn { width:40px; height:40px; border-radius:50%; border:1.5px solid var(--color-border-tertiary); background:var(--color-background-secondary); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:18px; transition:all 0.15s; }
+.star-btn.selected { background:#FAEEDA; border-color:#FAC775; }
+.star-btn svg { pointer-events:none; }
+.next-btn {
+  width:calc(100% - 36px); margin:0 18px; padding:11px;
+  border-radius:12px; background:#1D9E75; border:none;
+  font-size:13px; font-weight:500; color:white; cursor:pointer;
+  opacity:0.4; transition:opacity 0.15s;
+}
+.next-btn.ready { opacity:1; }
+.skip-btn { display:block; text-align:center; font-size:11px; color:var(--color-text-tertiary); margin-top:8px; cursor:pointer; padding-bottom:4px; }
+
+.done-screen { padding:24px 18px; text-align:center; }
+.done-icon { width:48px; height:48px; border-radius:50%; background:#E1F5EE; margin:0 auto 12px; display:flex; align-items:center; justify-content:center; }
+.done-title { font-size:15px; font-weight:500; color:var(--color-text-primary); margin-bottom:6px; }
+.done-sub { font-size:12px; color:var(--color-text-secondary); line-height:1.5; margin-bottom:16px; }
+.close-btn { width:100%; padding:10px; border-radius:12px; border:0.5px solid var(--color-border-secondary); background:var(--color-background-secondary); font-size:13px; color:var(--color-text-primary); cursor:pointer; }
+</style>
+
+<div class="phone" id="phone">
+  <div class="status-bar"><span>9:41</span><span>●●●</span></div>
+  <div class="top-bar">
+    <span class="back-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="#1D9E75" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </span>
+    <div>
+      <div class="group-name">Tour du Pic Saint-Loup</div>
+      <div class="group-meta">4 participants · Terminée hier</div>
+    </div>
+  </div>
+
+  <div class="messages">
+    <div class="date-sep">Hier</div>
+
+    <div class="msg-row">
+      <div class="mavatar" style="background:#EEEDFE;color:#3C3489;">ML</div>
+      <div>
+        <div class="bubble theirs">Super rando, merci à tous !</div>
+        <div class="bubble-meta">Marie · 17h22</div>
+      </div>
+    </div>
+
+    <div class="msg-row mine">
+      <div>
+        <div class="bubble mine">Pareil, vraiment top !</div>
+        <div class="bubble-meta mine">Toi · 17h45</div>
+      </div>
+    </div>
+
+    <div class="date-sep" style="margin-top:4px;">Aujourd'hui · 10h00</div>
+
+    <div style="margin:2px 0;">
+      <div class="bot-card">
+        <div class="bot-header">
+          <div class="bot-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="white"/></svg>
+          </div>
+          <div>
+            <div class="bot-title">La rando est terminée !</div>
+            <div class="bot-sub">Lacet · message automatique</div>
+          </div>
+        </div>
+        <div class="bot-body">
+          <div class="bot-body-text">Vous avez randonné ensemble hier. Prenez 30 secondes pour noter vos compagnons — ça aide tout le monde à mieux se connaître.</div>
+          <div class="avatars-row">
+            <div class="sm-avatar" style="background:#EEEDFE;color:#3C3489;" title="Marie">ML</div>
+            <div class="sm-avatar" style="background:#FAEEDA;color:#633806;" title="Jules">JD</div>
+            <div class="sm-avatar" style="background:#FAECE7;color:#712B13;" title="Sofia">SA</div>
+            <div class="done-badge" id="done-badge" style="display:none;">Noté ✓</div>
+          </div>
+          <button class="note-btn" id="note-btn" onclick="openSheet()">Noter mes compagnons</button>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--color-text-tertiary);margin-top:4px;padding:0 4px;">Les notes sont révélées quand tout le groupe a répondu</div>
+    </div>
+  </div>
+
+  <div class="input-bar">
+    <input class="msg-input" placeholder="Message…">
+    <div style="width:30px;height:30px;border-radius:50%;background:#1D9E75;display:flex;align-items:center;justify-content:center;">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+  </div>
+
+  <div class="sheet-overlay" id="overlay">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+
+      <div id="step-1">
+        <div class="sheet-header">
+          <div class="sheet-title">Notation</div>
+          <div class="sheet-subtitle">1 sur 3 · Marie L.</div>
+          <div class="progress-dots">
+            <div class="dot active" id="d1"></div>
+            <div class="dot" id="d2"></div>
+            <div class="dot" id="d3"></div>
+          </div>
+        </div>
+        <div class="person-card">
+          <div class="person-row">
+            <div class="person-avatar" style="background:#EEEDFE;color:#3C3489;">ML</div>
+            <div>
+              <div class="person-name">Marie L.</div>
+              <div class="person-meta">32 ans · 12 randos</div>
+            </div>
+          </div>
+          <div class="stars-row" id="stars1">
+            <button class="star-btn" onclick="selectStar(1,1)"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#D3D1C7" stroke="none"/></svg></button>
+            <button class="star-btn" onclick="selectStar(1,2)"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#D3D1C7" stroke="none"/></svg></button>
+            <button class="star-btn" onclick="selectStar(1,3)"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#D3D1C7" stroke="none"/></svg></button>
+            <button class="star-btn" onclick="selectStar(1,4)"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#D3D1C7" stroke="none"/></svg></button>
+            <button class="star-btn" onclick="selectStar(1,5)"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#D3D1C7" stroke="none"/></svg></button>
+          </div>
+          <button class="next-btn" id="next1" onclick="goStep(2)" disabled>Suivant</button>
+          <span class="skip-btn" onclick="goStep(2)">Passer</span>
+        </div>
+      </div>
+
+      <div id="step-2" style="display:none;">
+        <div class="sheet-header">
+          <div class="sheet-title">Notation</div>
+          <div class="sheet-subtitle">2 sur 3 · Jules D.</div>
+          <div class="progress-dots">
+            <div class="dot done"></div>
+            <div class="dot active" style="width:18px;border-radius:3px;background:#1D9E75;"></div>
+            <div class="dot"></div>
+          </div>
+        </div>
+        <div class="person-card">
+          <div class="person-row">
+            <div class="person-avatar" style="background:#FAEEDA;color:#633806;">JD</div>
+            <div>
+              <div class="person-name">Jules D.</div>
+              <div class="person-meta">25 ans · 5 randos</div>
+            </div>
+          </div>
+          <div class="stars-row" id="stars2">
+            <button class="star-btn" onclick="selectStar(2,1)"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#D3D1C7" stroke="none"/></svg></button>
+            <button class="star-btn" onclick="selectStar(2,2)"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#D3D1C7" stroke="none"/></svg></button>
+            <button class="star-btn" onclick="selectStar(2,3)"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#D3D1C7" stroke="none"/></svg></button>
+            <button class="star-btn" onclick="selectStar(2,4)"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#D3D1C7" stroke="none"/></svg></button>
+            <button class="star-btn" onclick="selectStar(2,5)"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#D3D1C7" stroke="none"/></svg></button>
+          </div>
+          <button class="next-btn" id="next2" onclick="goStep(3)" disabled>Suivant</button>
+          <span class="skip-btn" onclick="goStep(3)">Passer</span>
+        </div>
+      </div>
+
+      <div id="step-3" style="display:none;">
+        <div class="sheet-header">
+          <div class="sheet-title">Notation</div>
+          <div class="sheet-subtitle">3 sur 3 · Sofia A.</div>
+          <div class="progress-dots">
+            <div class="dot done"></div>
+            <div class="dot done"></div>
+            <div class="dot active" style="width:18px;border-radius:3px;background:#1D9E75;"></div>
+          </div>
+        </div>
+        <div class="person-card">
+          <div class="person-row">
+            <div class="person-avatar" style="background:#FAECE7;color:#712B13;">SA</div>
+            <div>
+              <div class="person-name">Sofia A.</div>
+              <div class="person-meta">31 ans · 9 randos</div>
+            </div>
+          </div>
+          <div class="stars-row" id="stars3">
+            <button class="star-btn" onclick="selectStar(3,1)"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#D3D1C7" stroke="none"/></svg></button>
+            <button class="star-btn" onclick="selectStar(3,2)"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#D3D1C7" stroke="none"/></svg></button>
+            <button class="star-btn" onclick="selectStar(3,3)"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#D3D1C7" stroke="none"/></svg></button>
+            <button class="star-btn" onclick="selectStar(3,4)"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#D3D1C7" stroke="none"/></svg></button>
+            <button class="star-btn" onclick="selectStar(3,5)"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#D3D1C7" stroke="none"/></svg></button>
+          </div>
+          <button class="next-btn" id="next3" onclick="goStep('done')" disabled>Envoyer mes notes</button>
+          <span class="skip-btn" onclick="goStep('done')">Passer</span>
+        </div>
+      </div>
+
+      <div id="step-done" style="display:none;">
+        <div class="done-screen">
+          <div class="done-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#1D9E75" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="done-title">Notes envoyées !</div>
+          <div class="done-sub">Tes notes seront révélées quand tous les membres auront répondu, ou dans 48h.</div>
+          <button class="close-btn" onclick="closeSheet()">Fermer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const ratings = {1: 0, 2: 0, 3: 0};
+
+function openSheet() {
+  document.getElementById('overlay').classList.add('open');
+}
+
+function closeSheet() {
+  document.getElementById('overlay').classList.remove('open');
+  const btn = document.getElementById('note-btn');
+  btn.textContent = 'Notes envoyées';
+  btn.classList.add('done');
+  btn.disabled = true;
+  document.getElementById('done-badge').style.display = 'flex';
+}
+
+function goStep(n) {
+  ['step-1','step-2','step-3','step-done'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  if (n === 'done') {
+    document.getElementById('step-done').style.display = 'block';
+  } else {
+    document.getElementById('step-' + n).style.display = 'block';
+  }
+}
+
+function selectStar(person, score) {
+  ratings[person] = score;
+  const stars = document.getElementById('stars' + person);
+  const btns = stars.querySelectorAll('.star-btn');
+  btns.forEach((btn, i) => {
+    btn.classList.toggle('selected', i < score);
+    const path = btn.querySelector('path');
+    path.setAttribute('fill', i < score ? '#EF9F27' : '#D3D1C7');
+  });
+  const next = document.getElementById('next' + person);
+  next.disabled = false;
+  next.classList.add('ready');
+}
+</script>

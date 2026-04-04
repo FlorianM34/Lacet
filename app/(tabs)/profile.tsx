@@ -12,6 +12,7 @@ import { router, useFocusEffect } from "expo-router";
 import { supabase } from "../../lib/supabase";
 import { useSessionContext } from "../../hooks/SessionContext";
 import { getAvatarColor, getInitials } from "../../lib/chat";
+import BadgeChip from "../../components/BadgeChip";
 import type { HikeLevel } from "../../types";
 
 interface HikeHistoryItem {
@@ -26,8 +27,6 @@ interface HikeHistoryItem {
 interface ReviewItem {
   id: string;
   score: number;
-  rater_name: string;
-  rater_id: string;
   hike_title: string;
 }
 
@@ -70,6 +69,7 @@ export default function ProfileScreen() {
   const [stats, setStats] = useState<ProfileStats>({ totalHikes: 0, totalKm: 0, organized: 0 });
   const [history, setHistory] = useState<HikeHistoryItem[]>([]);
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
+  const [badges, setBadges] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchProfileData = useCallback(async () => {
@@ -103,23 +103,29 @@ export default function ProfileScreen() {
       }));
       setHistory(historyItems);
 
-      // Fetch reviews
+      // Fetch reviews (anonymous — rater identity hidden)
       const { data: ratingsData } = await supabase
         .from("rating")
-        .select("id, score, rater_id, hike_id, rater:user!rater_id(display_name), hike:hike!hike_id(title)")
+        .select("id, score, hike:hike!hike_id(title)")
         .eq("rated_id", profile.id)
         .eq("revealed", true)
         .order("submitted_at", { ascending: false })
-        .limit(5);
+        .limit(10);
 
       const reviewItems: ReviewItem[] = (ratingsData ?? []).map((r: any) => ({
         id: r.id,
         score: r.score,
-        rater_name: (r.rater as any)?.display_name ?? "Inconnu",
-        rater_id: r.rater_id,
         hike_title: (r.hike as any)?.title ?? "",
       }));
       setReviews(reviewItems);
+
+      // Fetch badges
+      const { data: badgesData } = await supabase
+        .from("user_badge")
+        .select("badge_id")
+        .eq("user_id", profile.id)
+        .order("earned_at", { ascending: true });
+      setBadges((badgesData ?? []).map((b: any) => b.badge_id));
     } catch {
       // silently fail
     } finally {
@@ -205,6 +211,18 @@ export default function ProfileScreen() {
         </View>
       </View>
 
+      {/* Badges */}
+      {badges.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>BADGES</Text>
+          <View style={styles.badgesRow}>
+            {badges.map((badgeId) => (
+              <BadgeChip key={badgeId} badgeId={badgeId} />
+            ))}
+          </View>
+        </View>
+      )}
+
       {/* History */}
       {history.length > 0 && (
         <View style={styles.section}>
@@ -253,26 +271,13 @@ export default function ProfileScreen() {
       {reviews.length > 0 && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>AVIS REÇUS</Text>
-          {reviews.map((review) => {
-            const color = getAvatarColor(review.rater_id);
-            return (
-              <View key={review.id} style={styles.reviewItem}>
-                <View style={styles.reviewHeader}>
-                  <TouchableOpacity
-                    style={[styles.reviewAvatar, { backgroundColor: color.bg }]}
-                    onPress={() => router.push({ pathname: "/profile/[userId]", params: { userId: review.rater_id } })}
-                  >
-                    <Text style={[styles.reviewAvatarText, { color: color.text }]}>
-                      {getInitials(review.rater_name)}
-                    </Text>
-                  </TouchableOpacity>
-                  <Text style={styles.reviewName}>{review.rater_name}</Text>
-                  <View style={styles.reviewScore}>{renderStars(review.score, 11)}</View>
-                </View>
-                <Text style={styles.reviewContext}>{review.hike_title}</Text>
-              </View>
-            );
-          })}
+          <Text style={styles.reviewAnon}>Les avis sont anonymes</Text>
+          {reviews.map((review) => (
+            <View key={review.id} style={styles.reviewItem}>
+              <View style={styles.reviewScore}>{renderStars(review.score, 13)}</View>
+              <Text style={styles.reviewContext}>{review.hike_title}</Text>
+            </View>
+          ))}
         </View>
       )}
 
@@ -381,13 +386,18 @@ const styles = StyleSheet.create({
   badgeActor: { backgroundColor: "#EEEDFE", color: "#3C3489" },
 
   // Reviews
-  reviewItem: { marginBottom: 12 },
-  reviewHeader: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 },
-  reviewAvatar: { width: 22, height: 22, borderRadius: 11, justifyContent: "center", alignItems: "center" },
-  reviewAvatarText: { fontSize: 9, fontWeight: "500" },
-  reviewName: { fontSize: 12, fontWeight: "500", color: "#1a1a1a", flex: 1 },
+  badgesRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+  reviewAnon: { fontSize: 11, color: "#bbb", marginBottom: 10, fontStyle: "italic" },
+  reviewItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 8,
+    borderBottomWidth: 0.5,
+    borderBottomColor: "#f0f0f0",
+  },
   reviewScore: { flexDirection: "row", gap: 2 },
-  reviewContext: { fontSize: 11, color: "#999", paddingLeft: 28 },
+  reviewContext: { fontSize: 12, color: "#666", flex: 1 },
 
   // Buttons
   editBtn: {

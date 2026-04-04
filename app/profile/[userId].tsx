@@ -10,6 +10,7 @@ import {
 import { useLocalSearchParams, router } from "expo-router";
 import { supabase } from "../../lib/supabase";
 import { getAvatarColor, getInitials } from "../../lib/chat";
+import BadgeChip from "../../components/BadgeChip";
 import type { HikeLevel } from "../../types";
 
 interface PublicProfile {
@@ -69,6 +70,7 @@ export default function PublicProfileScreen() {
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [stats, setStats] = useState<PublicStats>({ totalHikes: 0, totalKm: 0, organized: 0 });
   const [reviews, setReviews] = useState<PublicReview[]>([]);
+  const [badges, setBadges] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -119,6 +121,14 @@ export default function PublicProfileScreen() {
           hike_title: (r.hike as any)?.title ?? "",
         }));
         setReviews(reviewItems);
+
+        // Fetch badges
+        const { data: badgesData } = await supabase
+          .from("user_badge")
+          .select("badge_id")
+          .eq("user_id", userId)
+          .order("earned_at", { ascending: true });
+        setBadges((badgesData ?? []).map((b: any) => b.badge_id));
       } catch {
         // silently fail
       } finally {
@@ -191,6 +201,18 @@ export default function PublicProfileScreen() {
         </View>
       </View>
 
+      {/* Badges */}
+      {badges.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>BADGES</Text>
+          <View style={styles.badgesRow}>
+            {badges.map((badgeId) => (
+              <BadgeChip key={badgeId} badgeId={badgeId} />
+            ))}
+          </View>
+        </View>
+      )}
+
       {/* Reviews */}
       {reviews.length > 0 && (
         <View style={styles.section}>
@@ -259,7 +281,8 @@ const styles = StyleSheet.create({
   statVal: { fontSize: 18, fontWeight: "500", color: "#1a1a1a" },
   statLbl: { fontSize: 11, color: "#999", marginTop: 2 },
 
-  section: { paddingHorizontal: 16, paddingVertical: 14 },
+  section: { paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 0.5, borderBottomColor: "#e0e0e0" },
+  badgesRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
   sectionTitle: {
     fontSize: 11,
     fontWeight: "500",

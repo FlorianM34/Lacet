@@ -16,6 +16,7 @@ import { supabase } from "../../lib/supabase";
 import { useSessionContext } from "../../hooks/SessionContext";
 import MessageBubble from "../../components/MessageBubble";
 import RdvModal from "../../components/RdvModal";
+import RatingModal from "../../components/RatingModal";
 import {
   getAvatarColor,
   getInitials,
@@ -38,6 +39,8 @@ interface Member {
   id: string;
   display_name: string;
   role: string;
+  birth_date?: string | null;
+  rating_count?: number;
 }
 
 export default function ChatScreen() {
@@ -52,6 +55,8 @@ export default function ChatScreen() {
   const [inputText, setInputText] = useState("");
   const [loading, setLoading] = useState(true);
   const [showRdv, setShowRdv] = useState(false);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [hasRated, setHasRated] = useState(false);
 
   const flatListRef = useRef<FlatList>(null);
   const membersMapRef = useRef<Map<string, string>>(new Map());
@@ -73,6 +78,19 @@ export default function ChatScreen() {
     })();
   }, [hikeId]);
 
+  // ── Check if user has already rated ──
+  useEffect(() => {
+    if (!hikeId || !userId) return;
+    (async () => {
+      const { count } = await supabase
+        .from("rating")
+        .select("id", { count: "exact", head: true })
+        .eq("hike_id", hikeId)
+        .eq("rater_id", userId);
+      setHasRated((count ?? 0) > 0);
+    })();
+  }, [hikeId, userId]);
+
   // ── Load members ──
   useEffect(() => {
     if (!hikeId) return;
@@ -80,7 +98,7 @@ export default function ChatScreen() {
     (async () => {
       const { data } = await supabase
         .from("participation")
-        .select("user_id, role, user:user!user_id(id, display_name)")
+        .select("user_id, role, user:user!user_id(id, display_name, birth_date, rating_count)")
         .eq("hike_id", hikeId)
         .eq("status", "confirmed");
 
@@ -89,6 +107,8 @@ export default function ChatScreen() {
           id: p.user_id,
           display_name: (p.user as any)?.display_name ?? "Inconnu",
           role: p.role,
+          birth_date: (p.user as any)?.birth_date ?? null,
+          rating_count: (p.user as any)?.rating_count ?? 0,
         }));
         setMembers(m);
         const map = new Map<string, string>();
@@ -122,6 +142,7 @@ export default function ChatScreen() {
         content: m.content,
         sent_at: m.sent_at,
         sender_name: (m.sender as any)?.display_name ?? "Inconnu",
+        isSystem: m.is_system ?? false,
       }));
 
       setMessages(msgs);
@@ -156,8 +177,8 @@ export default function ChatScreen() {
                 sender_id: newMsg.sender_id,
                 content: newMsg.content,
                 sent_at: newMsg.sent_at,
-                sender_name:
-                  membersMapRef.current.get(newMsg.sender_id) ?? "Inconnu",
+                sender_name: membersMapRef.current.get(newMsg.sender_id) ?? "Inconnu",
+                isSystem: newMsg.is_system ?? false,
               },
             ];
           });
@@ -254,6 +275,52 @@ export default function ChatScreen() {
 
   const isActor = creatorId === userId;
   const placesLeft = hike ? hike.max_participants - hike.current_count : 0;
+  const canComplete =
+    isActor &&
+    hike != null &&
+    (hike.status === "open" || hike.status === "full") &&
+    !hike.rating_triggered_at;
+
+  const ratableMembers = members.filter((m) => m.id !== userId);
+
+  // Show rating footer when hike is completed, user hasn't rated yet,
+  // and there's no rating_bot message already in the chat (avoid duplicate)
+  const hasRatingBotMessage = messages.some((m) => {
+    if (!m.isSystem || m.sender_id != null) return false;
+    try { return JSON.parse(m.content)?.type === "rating_bot"; } catch { return false; }
+  });
+  const showRatingFooter =
+    hike?.status === "completed" &&
+    !hasRated &&
+    !hasRatingBotMessage &&
+    ratableMembers.length > 0;
+
+  const handleCompleteHike = () => {
+    Alert.alert(
+      "Terminer la rando",
+      "Confirmer la fin de la randonnée ? Les participants recevront une invitation à se noter.",
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Terminer",
+          style: "destructive",
+          onPress: async () => {
+            const now = new Date().toISOString();
+            const { error } = await supabase
+              .from("hike")
+              .update({ status: "completed", rating_triggered_at: now })
+              .eq("id", hikeId);
+            if (!error) {
+              setHike((h) => h ? { ...h, status: "completed", rating_triggered_at: now } : h);
+            }
+            else {
+              console.log(error)
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const levelLabels: Record<string, string> = {
     easy: "Facile",
@@ -326,6 +393,11 @@ export default function ChatScreen() {
           {members.length} membres
           {placesLeft <= 0 ? " · Groupe complet" : ` · ${placesLeft} place${placesLeft > 1 ? "s" : ""} restante${placesLeft > 1 ? "s" : ""}`}
         </Text>
+        {canComplete && (
+          <TouchableOpacity style={styles.completeBtn} onPress={handleCompleteHike}>
+            <Text style={styles.completeBtnText}>Terminer</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Messages */}
@@ -346,6 +418,70 @@ export default function ChatScreen() {
             );
           }
 
+          if (item.isSystem && item.sender_id == null) {
+            // Try to parse as a structured bot message
+            let parsed: any = null;
+            try { parsed = JSON.parse(item.content); } catch {}
+
+            if (parsed?.type === "rating_bot") {
+              return (
+                <View style={styles.ratingCard}>
+                  <View style={styles.ratingCardHeader}>
+                    <View style={styles.ratingCardIcon}>
+                      <Text style={styles.ratingCardIconText}>★</Text>
+                    </View>
+                    <View>
+                      <Text style={styles.ratingCardTitle}>La rando est terminée !</Text>
+                      <Text style={styles.ratingCardSub}>Lacet · message automatique</Text>
+                    </View>
+                  </View>
+                  <View style={styles.ratingCardBody}>
+                    <Text style={styles.ratingCardText}>{parsed.message}</Text>
+                    <View style={styles.ratingAvatarsRow}>
+                      {ratableMembers.slice(0, 5).map((m) => {
+                        const color = getAvatarColor(m.id);
+                        return (
+                          <View key={m.id} style={[styles.ratingAvatar, { backgroundColor: color.bg }]}>
+                            <Text style={[styles.ratingAvatarText, { color: color.text }]}>
+                              {getInitials(m.display_name)}
+                            </Text>
+                          </View>
+                        );
+                      })}
+                    </View>
+                    <TouchableOpacity
+                      style={[styles.ratingBtn, hasRated && styles.ratingBtnDone]}
+                      onPress={() => !hasRated && setShowRatingModal(true)}
+                      disabled={hasRated}
+                    >
+                      <Text style={styles.ratingBtnText}>
+                        {hasRated ? "Notes envoyées ✓" : "Noter mes compagnons"}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                  <Text style={styles.ratingDisclaimer}>
+                    Les notes sont révélées quand tout le groupe a répondu
+                  </Text>
+                </View>
+              );
+            }
+
+            return (
+              <View style={styles.systemCard}>
+                <View style={styles.systemCardHeader}>
+                  <View style={styles.systemCardIcon}>
+                    <Text style={styles.systemCardIconText}>🏆</Text>
+                  </View>
+                  <View>
+                    <Text style={styles.systemCardTitle}>Notes disponibles</Text>
+                    <Text style={styles.systemCardSub}>Lacet · message automatique</Text>
+                  </View>
+                </View>
+                <Text style={styles.systemCardText}>{item.content}</Text>
+              </View>
+            );
+          }
+
           return (
             <MessageBubble
               content={item.content}
@@ -357,6 +493,42 @@ export default function ChatScreen() {
             />
           );
         }}
+        ListFooterComponent={showRatingFooter ? (
+          <View style={styles.ratingCard}>
+            <View style={styles.ratingCardHeader}>
+              <View style={styles.ratingCardIcon}>
+                <Text style={styles.ratingCardIconText}>★</Text>
+              </View>
+              <View>
+                <Text style={styles.ratingCardTitle}>La rando est terminée !</Text>
+                <Text style={styles.ratingCardSub}>Lacet · message automatique</Text>
+              </View>
+            </View>
+            <View style={styles.ratingCardBody}>
+              <Text style={styles.ratingCardText}>
+                Vous avez randonné ensemble. Prenez 30 secondes pour noter vos compagnons — ça aide tout le monde à mieux se connaître.
+              </Text>
+              <View style={styles.ratingAvatarsRow}>
+                {ratableMembers.slice(0, 5).map((m) => {
+                  const color = getAvatarColor(m.id);
+                  return (
+                    <View key={m.id} style={[styles.ratingAvatar, { backgroundColor: color.bg }]}>
+                      <Text style={[styles.ratingAvatarText, { color: color.text }]}>
+                        {getInitials(m.display_name)}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+              <TouchableOpacity style={styles.ratingBtn} onPress={() => setShowRatingModal(true)}>
+                <Text style={styles.ratingBtnText}>Noter mes compagnons</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.ratingDisclaimer}>
+              Les notes sont révélées quand tout le groupe a répondu
+            </Text>
+          </View>
+        ) : null}
       />
 
       {/* Input bar */}
@@ -388,6 +560,16 @@ export default function ChatScreen() {
         visible={showRdv}
         onSend={handleSendRdv}
         onClose={() => setShowRdv(false)}
+      />
+
+      {/* Rating modal */}
+      <RatingModal
+        visible={showRatingModal}
+        hikeId={hikeId!}
+        raterId={userId!}
+        members={ratableMembers}
+        onClose={() => setShowRatingModal(false)}
+        onDone={() => setHasRated(true)}
       />
     </KeyboardAvoidingView>
   );
@@ -456,12 +638,105 @@ const styles = StyleSheet.create({
     marginLeft: -6,
   },
   memberAvatarText: { fontSize: 10, fontWeight: "500" },
-  membersLabel: { fontSize: 11, color: "#999", marginLeft: 10 },
+  membersLabel: { fontSize: 11, color: "#999", marginLeft: 10, flex: 1 },
+  completeBtn: {
+    backgroundColor: "#1D9E75",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  completeBtnText: { fontSize: 11, fontWeight: "500", color: "#fff" },
 
   // Messages
   messagesList: { padding: 14, paddingBottom: 8 },
   dateSepRow: { alignItems: "center", marginVertical: 8 },
   dateSepText: { fontSize: 10, color: "#999" },
+
+  // Revelation system card
+  systemCard: {
+    borderWidth: 1,
+    borderColor: "#FAC775",
+    borderRadius: 14,
+    overflow: "hidden",
+    marginVertical: 8,
+  },
+  systemCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#FAEEDA",
+    padding: 10,
+  },
+  systemCardIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#F5A623",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  systemCardIconText: { fontSize: 13 },
+  systemCardTitle: { fontSize: 12, fontWeight: "500", color: "#633806" },
+  systemCardSub: { fontSize: 10, color: "#8A5500", marginTop: 1 },
+  systemCardText: {
+    fontSize: 12,
+    color: "#555",
+    lineHeight: 17,
+    padding: 12,
+  },
+
+  // Rating bot card
+  ratingCard: {
+    borderWidth: 1,
+    borderColor: "#9FE1CB",
+    borderRadius: 14,
+    overflow: "hidden",
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  ratingCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#E1F5EE",
+    padding: 10,
+  },
+  ratingCardIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#1D9E75",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  ratingCardIconText: { fontSize: 13, color: "#fff" },
+  ratingCardTitle: { fontSize: 12, fontWeight: "500", color: "#085041" },
+  ratingCardSub: { fontSize: 10, color: "#0F6E56", marginTop: 1 },
+  ratingCardBody: { padding: 12 },
+  ratingCardText: { fontSize: 12, color: "#555", lineHeight: 17, marginBottom: 10 },
+  ratingAvatarsRow: { flexDirection: "row", gap: 4, marginBottom: 10 },
+  ratingAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  ratingAvatarText: { fontSize: 10, fontWeight: "500" },
+  ratingBtn: {
+    backgroundColor: "#1D9E75",
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: "center",
+  },
+  ratingBtnText: { fontSize: 12, fontWeight: "500", color: "#fff" },
+  ratingBtnDone: { backgroundColor: "#9FE1CB" },
+  ratingDisclaimer: {
+    fontSize: 10,
+    color: "#999",
+    paddingHorizontal: 12,
+    paddingBottom: 10,
+  },
 
   // Input bar
   inputBar: {
