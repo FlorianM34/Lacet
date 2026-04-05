@@ -23,14 +23,16 @@ export function useSession(): SessionState {
       .eq("id", userId)
       .single();
 
-    if ((data as User | null)?.is_banned) {
+    const userData = data as User | null;
+
+    if (userData?.is_banned || userData?.is_deleted) {
       await supabase.auth.signOut();
       setSession(null);
       setProfile(null);
       return;
     }
 
-    setProfile(data as User | null);
+    setProfile(userData);
   }, []);
 
   useEffect(() => {

@@ -28,7 +28,7 @@ export default function RdvModal({ visible, onSend, onClose }: Props) {
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
+    <Modal visible={visible} animationType="none" transparent>
       <View style={styles.overlay}>
         <View style={styles.sheet}>
           <View style={styles.handle} />

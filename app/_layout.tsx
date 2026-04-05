@@ -74,6 +74,10 @@ function RootNavigator() {
         name="profile/[userId]"
         options={{ headerShown: true, title: "Profil" }}
       />
+      <Stack.Screen
+        name="settings"
+        options={{ headerShown: true, title: "Paramètres" }}
+      />
     </Stack>
   );
 }

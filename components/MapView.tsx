@@ -79,8 +79,8 @@ export default function MapView({
           ref={cameraRef}
           zoomLevel={coordinates.length > 0 ? 12 : 5}
           centerCoordinate={center}
-          animationMode="flyTo"
-          animationDuration={500}
+          animationMode="none"
+          animationDuration={0}
         />
 
         {coordinates.length >= 2 && (

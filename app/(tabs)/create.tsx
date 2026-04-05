@@ -41,6 +41,12 @@ interface ParsedGPXResult {
   description?: string;
 }
 
+function sampleCoordinates(coords: [number, number][], maxPoints = 300): [number, number][] {
+  if (coords.length <= maxPoints) return coords;
+  const step = (coords.length - 1) / (maxPoints - 1);
+  return Array.from({ length: maxPoints }, (_, i) => coords[Math.round(i * step)]);
+}
+
 function formatDuration(min: number) {
   const h = Math.floor(min / 60);
   const m = min % 60;
@@ -233,6 +239,9 @@ export default function CreateScreen() {
           description: description.trim() || null,
           start_location: `SRID=4326;POINT(${startLng} ${startLat})`,
           gpx_url: gpxUrl,
+          route_coordinates: inputMode === "gpx" && coordinates.length >= 2
+            ? sampleCoordinates(coordinates)
+            : null,
           distance_km: finalDistance,
           duration_min: finalDuration,
           elevation_m: finalElevation,

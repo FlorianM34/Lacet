@@ -1,0 +1,230 @@
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.phone{width:300px;margin:1.5rem auto;border-radius:36px;border:1.5px solid #2a2a2a;overflow:hidden;position:relative;background:#1a2e20;font-family:var(--font-sans);user-select:none}
+.screen{position:relative;width:100%;aspect-ratio:9/19.5;overflow:hidden}
+
+.map-layer{position:absolute;inset:0}
+.card-wrap{position:absolute;inset:0;transition:transform 0.05s linear}
+
+.status-bar{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;padding:10px 20px 0;font-size:11px;font-weight:500;color:white;z-index:10}
+.top-ui{position:absolute;top:28px;left:0;right:0;padding:8px 16px;display:flex;justify-content:space-between;align-items:center;z-index:10}
+.logo{font-size:16px;font-weight:500;color:white;letter-spacing:-0.3px}
+.filter-pill{background:rgba(255,255,255,0.15);border:0.5px solid rgba(255,255,255,0.25);padding:5px 11px;border-radius:20px;display:flex;align-items:center;gap:5px;cursor:pointer;backdrop-filter:blur(8px)}
+.filter-pill span{font-size:11px;color:white}
+
+.join-hint{position:absolute;top:80px;left:20px;background:#1D9E75;border:2px solid white;border-radius:8px;padding:5px 12px;font-size:13px;font-weight:500;color:white;opacity:0;transition:opacity 0.1s;z-index:20;transform:rotate(-15deg)}
+.pass-hint{position:absolute;top:80px;right:20px;background:#E24B4A;border:2px solid white;border-radius:8px;padding:5px 12px;font-size:13px;font-weight:500;color:white;opacity:0;transition:opacity 0.1s;z-index:20;transform:rotate(15deg)}
+
+.gradient-overlay{position:absolute;inset:0;background:linear-gradient(to bottom, transparent 35%, rgba(8,20,12,0.5) 55%, rgba(6,16,10,0.95) 80%)}
+
+.info-panel{position:absolute;bottom:0;left:0;right:0;padding:16px 16px 100px;z-index:5}
+.hike-title{font-size:19px;font-weight:500;color:white;margin-bottom:4px;line-height:1.2}
+.hike-loc{font-size:12px;color:rgba(255,255,255,0.65);margin-bottom:12px;display:flex;align-items:center;gap:4px}
+.stats-row{display:flex;gap:6px;margin-bottom:12px}
+.stat{background:rgba(255,255,255,0.12);border:0.5px solid rgba(255,255,255,0.2);border-radius:8px;padding:7px 8px;text-align:center;backdrop-filter:blur(6px);flex:1}
+.stat-val{font-size:12px;font-weight:500;color:white}
+.stat-lbl{font-size:9px;color:rgba(255,255,255,0.55);margin-top:1px}
+.tags-row{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
+.tag{font-size:10px;padding:3px 9px;border-radius:12px;background:rgba(255,255,255,0.15);color:white;border:0.5px solid rgba(255,255,255,0.2)}
+.tag.green{background:rgba(29,158,117,0.35);border-color:rgba(29,158,117,0.6);color:#9FE1CB}
+.organizer{display:flex;align-items:center;gap:8px}
+.org-av{width:28px;height:28px;border-radius:50%;background:#E1F5EE;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:#085041;flex-shrink:0;border:1.5px solid rgba(255,255,255,0.4)}
+.org-info{font-size:12px;color:rgba(255,255,255,0.8)}
+.org-rating{font-size:10px;color:rgba(255,255,255,0.5);margin-top:1px}
+
+.action-bar{position:absolute;bottom:0;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:18px;padding-bottom:16px;z-index:10}
+.btn-pass{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(10px);transition:transform 0.1s,background 0.15s}
+.btn-pass:hover{background:rgba(226,75,74,0.4)}
+.btn-pass:active{transform:scale(0.92)}
+.btn-join{width:64px;height:64px;border-radius:50%;background:#1D9E75;border:2px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform 0.1s,background 0.15s}
+.btn-join:hover{background:#0F6E56}
+.btn-join:active{transform:scale(0.92)}
+.btn-info{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.12);border:0.5px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(10px);transition:transform 0.1s}
+.btn-info:active{transform:scale(0.92)}
+
+.bottom-nav{background:rgba(10,20,12,0.95);border-top:0.5px solid rgba(255,255,255,0.1);display:flex;justify-content:space-around;padding:8px 0 14px}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
+.nav-lbl{font-size:10px;color:rgba(255,255,255,0.35)}
+.nav-lbl.active{color:#1D9E75}
+.nav-dot{width:4px;height:4px;border-radius:50%;background:#1D9E75}
+
+.match-screen{position:absolute;inset:0;background:#1D9E75;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;z-index:30;opacity:0;pointer-events:none;transition:opacity 0.3s}
+.match-screen.show{opacity:1;pointer-events:all}
+.match-icon{width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.match-title{font-size:24px;font-weight:500;color:white;margin-bottom:8px;text-align:center}
+.match-sub{font-size:14px;color:rgba(255,255,255,0.8);text-align:center;line-height:1.5;margin-bottom:24px}
+.match-btn{background:white;color:#085041;border:none;border-radius:24px;padding:12px 28px;font-size:14px;font-weight:500;cursor:pointer}
+.match-btn2{background:transparent;color:rgba(255,255,255,0.7);border:none;font-size:13px;cursor:pointer;margin-top:10px}
+
+.counter{position:absolute;top:28px;left:50%;transform:translateX(-50%);display:flex;gap:4px;z-index:10}
+.counter-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.3)}
+.counter-dot.active{background:white;width:14px;border-radius:3px}
+</style>
+
+<div class="phone">
+  <div class="screen" id="screen">
+    <div class="card-wrap" id="card">
+      <div class="map-layer">
+        <svg width="100%" height="100%" viewBox="0 0 300 580" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="300" height="580" fill="#1e3528"/>
+          <path d="M0 320 Q75 290 150 305 Q225 320 300 290" stroke="#264235" stroke-width="100" fill="none"/>
+          <path d="M0 200 Q80 180 150 195 Q220 210 300 185" stroke="#1a2e20" stroke-width="80" fill="none"/>
+          <path d="M0 460 Q90 440 160 450 Q230 460 300 435" stroke="#142318" stroke-width="100" fill="none"/>
+          <path d="M40 500 Q90 300 140 320 Q185 340 240 160" stroke="#1D9E75" stroke-width="2.5" stroke-linecap="round" fill="none" stroke-dasharray="6 4"/>
+          <circle cx="44" cy="496" r="7" fill="#1D9E75" stroke="white" stroke-width="2"/>
+          <circle cx="238" cy="163" r="7" fill="#5DCAA5" stroke="white" stroke-width="2"/>
+          <circle cx="120" cy="340" r="4" fill="#9FE1CB" stroke="white" stroke-width="1.5" opacity="0.7"/>
+          <path d="M80 400 Q100 350 120 340" stroke="#9FE1CB" stroke-width="1" stroke-dasharray="3 3" fill="none" opacity="0.4"/>
+        </svg>
+      </div>
+      <div class="gradient-overlay"></div>
+      <div class="status-bar"><span>9:41</span><span>●●●</span></div>
+      <div class="top-ui">
+        <span class="logo">lacet</span>
+        <div class="filter-pill">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M4 8h8M6 12h4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span>50 km · Tous niveaux</span>
+        </div>
+      </div>
+      <div class="counter">
+        <div class="counter-dot active"></div>
+        <div class="counter-dot"></div>
+        <div class="counter-dot"></div>
+        <div class="counter-dot"></div>
+      </div>
+      <div class="join-hint" id="join-hint">Rejoindre</div>
+      <div class="pass-hint" id="pass-hint">Passer</div>
+      <div class="info-panel">
+        <div class="hike-title">Tour du Pic Saint-Loup</div>
+        <div class="hike-loc">
+          <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M8 1.5C5.5 1.5 3.5 3.5 3.5 6c0 3.5 4.5 8.5 4.5 8.5S12.5 9.5 12.5 6c0-2.5-2-4.5-4.5-4.5z" stroke="rgba(255,255,255,0.65)" stroke-width="1.2"/></svg>
+          Saint-Mathieu-de-Tréviers · Hérault
+        </div>
+        <div class="stats-row">
+          <div class="stat"><div class="stat-val">12 km</div><div class="stat-lbl">distance</div></div>
+          <div class="stat"><div class="stat-val">4h30</div><div class="stat-lbl">durée</div></div>
+          <div class="stat"><div class="stat-val">620 m</div><div class="stat-lbl">dénivelé</div></div>
+          <div class="stat"><div class="stat-val">2/5</div><div class="stat-lbl">places</div></div>
+        </div>
+        <div class="tags-row">
+          <span class="tag">Avr. flexible</span>
+          <span class="tag">Intermédiaire</span>
+          <span class="tag green">Voiturage</span>
+        </div>
+        <div class="organizer">
+          <div class="org-av">TC</div>
+          <div>
+            <div class="org-info">Thomas C. · 28 ans</div>
+            <div class="org-rating">4.7 ★ · 8 randos organisées</div>
+          </div>
+        </div>
+      </div>
+      <div class="action-bar">
+        <div class="btn-pass" onclick="swipe('left')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="white" stroke-width="2.2" stroke-linecap="round"/></svg>
+        </div>
+        <div class="btn-join" onclick="swipe('right')">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="btn-info">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="white" stroke-width="1.5"/><path d="M12 8h.01M12 12v4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="match-screen" id="match-screen">
+      <div class="match-icon">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="match-title">Tu rejoins la rando !</div>
+      <div class="match-sub">Tu es ajouté au groupe.<br>Le chat est maintenant ouvert.</div>
+      <button class="match-btn" onclick="closeMatch()">Voir le groupe</button>
+      <button class="match-btn2" onclick="closeMatch()">Continuer à explorer</button>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-item">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="#1D9E75" stroke-width="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/></svg>
+      <span class="nav-lbl active">Explorer</span>
+      <div class="nav-dot"></div>
+    </div>
+    <div class="nav-item">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/><circle cx="9" cy="7" r="4" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/></svg>
+      <span class="nav-lbl">Groupes</span>
+    </div>
+    <div class="nav-item">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <span class="nav-lbl">Créer</span>
+    </div>
+    <div class="nav-item">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/></svg>
+      <span class="nav-lbl">Profil</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const card = document.getElementById('card');
+const joinHint = document.getElementById('join-hint');
+const passHint = document.getElementById('pass-hint');
+let dragging = false, startX = 0, currentX = 0;
+
+card.addEventListener('mousedown', e => { dragging = true; startX = e.clientX; card.style.transition = 'none'; });
+window.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  currentX = e.clientX - startX;
+  card.style.transform = `translateX(${currentX}px) rotate(${currentX * 0.03}deg)`;
+  joinHint.style.opacity = currentX > 40 ? Math.min((currentX - 40) / 60, 1) : 0;
+  passHint.style.opacity = currentX < -40 ? Math.min((-currentX - 40) / 60, 1) : 0;
+});
+window.addEventListener('mouseup', () => {
+  if (!dragging) return;
+  dragging = false;
+  card.style.transition = 'transform 0.3s ease';
+  joinHint.style.opacity = 0;
+  passHint.style.opacity = 0;
+  if (currentX > 90) swipe('right');
+  else if (currentX < -90) swipe('left');
+  else { card.style.transform = ''; }
+  currentX = 0;
+});
+
+card.addEventListener('touchstart', e => { dragging = true; startX = e.touches[0].clientX; card.style.transition = 'none'; });
+window.addEventListener('touchmove', e => {
+  if (!dragging) return;
+  currentX = e.touches[0].clientX - startX;
+  card.style.transform = `translateX(${currentX}px) rotate(${currentX * 0.03}deg)`;
+  joinHint.style.opacity = currentX > 40 ? Math.min((currentX - 40) / 60, 1) : 0;
+  passHint.style.opacity = currentX < -40 ? Math.min((-currentX - 40) / 60, 1) : 0;
+});
+window.addEventListener('touchend', () => {
+  if (!dragging) return;
+  dragging = false;
+  card.style.transition = 'transform 0.3s ease';
+  joinHint.style.opacity = 0;
+  passHint.style.opacity = 0;
+  if (currentX > 90) swipe('right');
+  else if (currentX < -90) swipe('left');
+  else { card.style.transform = ''; }
+  currentX = 0;
+});
+
+function swipe(dir) {
+  card.style.transition = 'transform 0.35s ease, opacity 0.3s';
+  card.style.transform = dir === 'right' ? 'translateX(160%) rotate(20deg)' : 'translateX(-160%) rotate(-20deg)';
+  card.style.opacity = '0';
+  if (dir === 'right') {
+    setTimeout(() => { document.getElementById('match-screen').classList.add('show'); }, 360);
+  } else {
+    setTimeout(() => { card.style.transition = 'none'; card.style.transform = ''; card.style.opacity = '1'; }, 400);
+  }
+}
+
+function closeMatch() {
+  document.getElementById('match-screen').classList.remove('show');
+  card.style.transition = 'none';
+  card.style.transform = '';
+  card.style.opacity = '1';
+}
+</script>

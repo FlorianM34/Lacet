@@ -9,7 +9,7 @@ import {
   Alert,
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import Mapbox, { MapView, Camera, MarkerView } from "@rnmapbox/maps";
+import Mapbox, { MapView, Camera, MarkerView, ShapeSource, LineLayer } from "@rnmapbox/maps";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../../lib/supabase";
 import { getAvatarColor, getInitials } from "../../lib/chat";
@@ -163,6 +163,28 @@ export default function HikeDetailScreen() {
 
   const coords: [number, number] = parseCoords(hike.start_location);
 
+  const route = hike.route_coordinates;
+  const hasRoute = Array.isArray(route) && route.length >= 2;
+
+  const cameraBounds = hasRoute ? (() => {
+    const lngs = route!.map((c) => c[0]);
+    const lats = route!.map((c) => c[1]);
+    return {
+      ne: [Math.max(...lngs), Math.max(...lats)] as [number, number],
+      sw: [Math.min(...lngs), Math.min(...lats)] as [number, number],
+      paddingTop: 40,
+      paddingBottom: 40,
+      paddingLeft: 24,
+      paddingRight: 24,
+    };
+  })() : null;
+
+  const lineGeoJSON = {
+    type: "Feature" as const,
+    properties: {},
+    geometry: { type: "LineString" as const, coordinates: hasRoute ? route! : [] },
+  };
+
   const handleCancel = () => {
     Alert.alert(
       "Annuler la randonnée",
@@ -237,7 +259,27 @@ export default function HikeDetailScreen() {
           attributionEnabled={false}
           logoEnabled={false}
         >
-          <Camera centerCoordinate={coords} zoomLevel={12} animationMode="none" />
+          {cameraBounds ? (
+            <Camera bounds={cameraBounds} animationMode="none" animationDuration={0} />
+          ) : (
+            <Camera centerCoordinate={coords} zoomLevel={12} animationMode="none" animationDuration={0} />
+          )}
+
+          {hasRoute && (
+            <ShapeSource id="route-detail" shape={lineGeoJSON}>
+              <LineLayer
+                id="routeLine-detail"
+                style={{
+                  lineColor: "#1D9E75",
+                  lineWidth: 3,
+                  lineOpacity: 0.9,
+                  lineCap: "round",
+                  lineJoin: "round",
+                }}
+              />
+            </ShapeSource>
+          )}
+
           <MarkerView coordinate={coords}>
             <View style={styles.marker}>
               <View style={styles.markerDot} />

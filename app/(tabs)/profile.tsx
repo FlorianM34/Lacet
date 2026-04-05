@@ -1,14 +1,14 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback, useLayoutEffect } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  Alert,
   ActivityIndicator,
 } from "react-native";
-import { router, useFocusEffect } from "expo-router";
+import { router, useFocusEffect, useNavigation } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../../lib/supabase";
 import { useSessionContext } from "../../hooks/SessionContext";
 import { getAvatarColor, getInitials } from "../../lib/chat";
@@ -65,12 +65,26 @@ function renderStars(rating: number, size: number = 14) {
 }
 
 export default function ProfileScreen() {
-  const { profile, signOut } = useSessionContext();
+  const { profile } = useSessionContext();
+  const navigation = useNavigation();
   const [stats, setStats] = useState<ProfileStats>({ totalHikes: 0, totalKm: 0, organized: 0 });
   const [history, setHistory] = useState<HikeHistoryItem[]>([]);
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [badges, setBadges] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={() => router.push("/settings")}
+          style={{ paddingHorizontal: 16, paddingVertical: 8 }}
+        >
+          <Ionicons name="settings-outline" size={22} color="#555" />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation]);
 
   const fetchProfileData = useCallback(async () => {
     if (!profile) return;
@@ -139,13 +153,6 @@ export default function ProfileScreen() {
       fetchProfileData();
     }, [fetchProfileData])
   );
-
-  const handleSignOut = () => {
-    Alert.alert("Déconnexion", "Voulez-vous vraiment vous déconnecter ?", [
-      { text: "Annuler", style: "cancel" },
-      { text: "Déconnexion", style: "destructive", onPress: signOut },
-    ]);
-  };
 
   if (!profile) {
     return (
@@ -281,17 +288,12 @@ export default function ProfileScreen() {
         </View>
       )}
 
-      {/* Edit button */}
+      {/* Settings link */}
       <TouchableOpacity
         style={styles.editBtn}
-        onPress={() => router.push("/profile/edit")}
+        onPress={() => router.push("/settings")}
       >
-        <Text style={styles.editBtnText}>Modifier mon profil</Text>
-      </TouchableOpacity>
-
-      {/* Sign out */}
-      <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-        <Text style={styles.signOutText}>Se déconnecter</Text>
+        <Text style={styles.editBtnText}>Paramètres</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -411,14 +413,4 @@ const styles = StyleSheet.create({
     backgroundColor: "#f5f5f5",
   },
   editBtnText: { fontSize: 13, fontWeight: "500", color: "#1a1a1a" },
-  signOutButton: {
-    marginHorizontal: 16,
-    marginTop: 12,
-    paddingVertical: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#d32f2f",
-    alignItems: "center",
-  },
-  signOutText: { color: "#d32f2f", fontSize: 14, fontWeight: "600" },
 });

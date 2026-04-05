@@ -92,7 +92,7 @@ export default function RatingModal({ visible, hikeId, raterId, members, onClose
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade">
+    <Modal visible={visible} transparent animationType="none">
       <View style={styles.overlay}>
         <Animated.View style={[styles.sheet, { transform: [{ translateY: slideY }] }]}>
           <View style={styles.handle} />

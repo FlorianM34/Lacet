@@ -31,7 +31,7 @@ interface Props {
 
 export default function FilterModal({ visible, filters, onChange, onClose }: Props) {
   return (
-    <Modal visible={visible} animationType="slide" transparent>
+    <Modal visible={visible} animationType="none" transparent>
       <View style={styles.overlay}>
         <View style={styles.sheet}>
           <View style={styles.handle} />

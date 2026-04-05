@@ -75,6 +75,10 @@ export default function HikeCard({ hike, onSwipeLeft, onSwipeRight, isTop }: Pro
   const likeOpacity = useRef(new Animated.Value(0)).current;
   const nopeOpacity = useRef(new Animated.Value(0)).current;
 
+  // Keep a mutable ref so PanResponder callbacks always see the latest isTop value
+  const isTopRef = useRef(isTop);
+  isTopRef.current = isTop;
+
   const rotate = translateX.interpolate({
     inputRange: [-SCREEN_WIDTH, 0, SCREEN_WIDTH],
     outputRange: ["-18deg", "0deg", "18deg"],
@@ -89,9 +93,10 @@ export default function HikeCard({ hike, onSwipeLeft, onSwipeRight, isTop }: Pro
 
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => isTop,
-      onMoveShouldSetPanResponder: (_, g) => isTop && Math.abs(g.dx) > 5,
+      onStartShouldSetPanResponder: () => isTopRef.current,
+      onMoveShouldSetPanResponder: (_, g) => isTopRef.current && Math.abs(g.dx) > 5,
       onPanResponderMove: (_, gestureState) => {
+        if (!isTopRef.current) return;
         translateX.setValue(gestureState.dx);
         // Update hint opacities
         if (gestureState.dx > 30) {
@@ -106,6 +111,7 @@ export default function HikeCard({ hike, onSwipeLeft, onSwipeRight, isTop }: Pro
         }
       },
       onPanResponderRelease: (_, gestureState) => {
+        if (!isTopRef.current) return;
         if (gestureState.dx > SWIPE_THRESHOLD) {
           Animated.timing(translateX, {
             toValue: SCREEN_WIDTH * 1.4,
@@ -149,9 +155,30 @@ export default function HikeCard({ hike, onSwipeLeft, onSwipeRight, isTop }: Pro
 
   const placesLeft = hike.max_participants - hike.current_count;
 
-  // Mini map GeoJSON
   const coords = hike.start_location?.coordinates;
   const mapCenter: [number, number] = coords ? [coords[0], coords[1]] : [2.35, 48.85];
+
+  const route = hike.route_coordinates;
+  const hasRoute = Array.isArray(route) && route.length >= 2;
+
+  const cameraBounds = hasRoute ? (() => {
+    const lngs = route!.map((c) => c[0]);
+    const lats = route!.map((c) => c[1]);
+    return {
+      ne: [Math.max(...lngs), Math.max(...lats)] as [number, number],
+      sw: [Math.min(...lngs), Math.min(...lats)] as [number, number],
+      paddingTop: 24,
+      paddingBottom: 24,
+      paddingLeft: 24,
+      paddingRight: 24,
+    };
+  })() : null;
+
+  const lineGeoJSON = {
+    type: "Feature" as const,
+    properties: {},
+    geometry: { type: "LineString" as const, coordinates: hasRoute ? route! : [] },
+  };
 
   const { creator } = hike;
   const creatorAge = creator?.birth_date ? getAge(creator.birth_date) : null;
@@ -189,13 +216,32 @@ export default function HikeCard({ hike, onSwipeLeft, onSwipeRight, isTop }: Pro
           attributionEnabled={false}
           logoEnabled={false}
         >
-          <Camera
-            defaultSettings={{ centerCoordinate: [2.35, 48.85], zoomLevel: 8 }}
-            centerCoordinate={mapCenter}
-            zoomLevel={11}
-            animationMode="none"
-            animationDuration={0}
-          />
+          {cameraBounds ? (
+            <Camera bounds={cameraBounds} animationMode="none" animationDuration={0} />
+          ) : (
+            <Camera
+              defaultSettings={{ centerCoordinate: [2.35, 48.85], zoomLevel: 8 }}
+              centerCoordinate={mapCenter}
+              zoomLevel={11}
+              animationMode="none"
+              animationDuration={0}
+            />
+          )}
+
+          {hasRoute && (
+            <ShapeSource id={`route-${hike.id}`} shape={lineGeoJSON}>
+              <LineLayer
+                id={`routeLine-${hike.id}`}
+                style={{
+                  lineColor: "#1D9E75",
+                  lineWidth: 2.5,
+                  lineOpacity: 0.9,
+                  lineCap: "round",
+                  lineJoin: "round",
+                }}
+              />
+            </ShapeSource>
+          )}
         </MapView>
       </View>
 

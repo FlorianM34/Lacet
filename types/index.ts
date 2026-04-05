@@ -12,6 +12,14 @@ export type RatingContext = "completed" | "left_early";
 
 // ── Table USER ──
 
+export interface NotificationPrefs {
+  new_member: boolean;
+  new_message: boolean;
+  group_full: boolean;
+  reminder: boolean;
+  rating: boolean;
+}
+
 export interface User {
   id: string;
   phone: string;
@@ -25,6 +33,9 @@ export interface User {
   rating_count: number;
   expo_push_token: string | null;
   is_banned: boolean;
+  is_deleted: boolean;
+  deleted_at: string | null;
+  notification_prefs: NotificationPrefs;
   created_at: string; // ISO timestamp
 }
 
@@ -49,6 +60,7 @@ export interface Hike {
   status: HikeStatus;
   rating_triggered_at: string | null;
   completed_by: string | null;
+  route_coordinates: [number, number][] | null;
   created_at: string; // ISO timestamp
 }
 

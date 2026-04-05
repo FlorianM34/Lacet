@@ -14,7 +14,7 @@ interface Props {
 
 export default function MatchOverlay({ visible, hikeName, onViewGroup }: Props) {
   return (
-    <Modal visible={visible} animationType="fade" transparent>
+    <Modal visible={visible} animationType="none" transparent>
       <View style={styles.overlay}>
         <Text style={styles.emoji}>🎉</Text>
         <Text style={styles.title}>Tu rejoins la rando !</Text>
