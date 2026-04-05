@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,8 +7,8 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
-  Animated,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Location from "expo-location";
 import { router } from "expo-router";
 import { supabase } from "../../lib/supabase";
@@ -16,32 +16,37 @@ import { useSessionContext } from "../../hooks/SessionContext";
 import HikeCard from "../../components/HikeCard";
 import FilterModal from "../../components/FilterModal";
 import MatchOverlay from "../../components/MatchOverlay";
-import type { HikeWithCreator, FeedFilters } from "../../types";
+import type { HikeWithCreator, FeedFilters, HikeLevel } from "../../types";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
+
+function levelLabel(level: HikeLevel): string {
+  const map: Record<HikeLevel, string> = {
+    easy: "Facile",
+    intermediate: "Intermédiaire",
+    hard: "Difficile",
+    expert: "Expert",
+  };
+  return map[level];
+}
 
 export default function ExploreScreen() {
   const { session } = useSessionContext();
   const userId = session?.user?.id;
+  const insets = useSafeAreaInsets();
 
   const [hikes, setHikes] = useState<HikeWithCreator[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [location, setLocation] = useState<{ lng: number; lat: number } | null>(null);
 
-  // Filters
   const [filters, setFilters] = useState<FeedFilters>({
     radiusKm: 50,
     dateRange: "all",
     level: null,
   });
   const [showFilters, setShowFilters] = useState(false);
-
-  // Match overlay
   const [matchHike, setMatchHike] = useState<HikeWithCreator | null>(null);
-
-  // Programmatic swipe refs
-  const topCardTranslateX = useRef(new Animated.Value(0)).current;
 
   // ── Get location ──
   useEffect(() => {
@@ -52,12 +57,10 @@ export default function ExploreScreen() {
           "Localisation requise",
           "Lacet a besoin de votre position pour trouver des randonnées à proximité.",
         );
-        // Fallback to Paris
         setLocation({ lng: 2.3522, lat: 48.8566 });
         return;
       }
       const loc = await Location.getCurrentPositionAsync({});
-      console.log("[Explorer] Position GPS:", loc.coords.latitude, loc.coords.longitude);
       setLocation({ lng: loc.coords.longitude, lat: loc.coords.latitude });
     })();
   }, []);
@@ -69,39 +72,7 @@ export default function ExploreScreen() {
     setLoading(true);
     try {
       const radiusMeters = filters.radiusKm * 1000;
-      console.log("[Explorer] Recherche — lat:", location.lat, "lng:", location.lng, "rayon:", filters.radiusKm, "km");
 
-      // Log toutes les randos existantes (hors filtre)
-      const { data: allHikes } = await supabase.rpc("get_nearby_hikes", {
-        user_lng: location.lng,
-        user_lat: location.lat,
-        radius_meters: 999999999,
-        filter_level: null,
-        filter_date_range: "all",
-        current_user_id: null,
-      });
-      console.log("[Explorer] Toutes les randos en base:", (allHikes as any[])?.length ?? 0);
-      (allHikes as any[])?.forEach((h: any) => {
-        const coords = h.start_location?.coordinates;
-        console.log(`[Explorer] "${h.title}" — lng: ${coords?.[0]} lat: ${coords?.[1]}`);
-      });
-
-      // Build date filter
-      let dateFilter = "";
-      const today = new Date().toISOString().split("T")[0];
-      if (filters.dateRange === "week") {
-        const nextWeek = new Date();
-        nextWeek.setDate(nextWeek.getDate() + 7);
-        dateFilter = `and date_start.gte.${today},date_start.lte.${nextWeek.toISOString().split("T")[0]}`;
-      } else if (filters.dateRange === "month") {
-        const nextMonth = new Date();
-        nextMonth.setMonth(nextMonth.getMonth() + 1);
-        dateFilter = `and date_start.gte.${today},date_start.lte.${nextMonth.toISOString().split("T")[0]}`;
-      } else if (filters.dateRange === "flexible") {
-        dateFilter = `and date_flexible.eq.true`;
-      }
-
-      // Use RPC for geography query
       const { data, error } = await supabase.rpc("get_nearby_hikes", {
         user_lng: location.lng,
         user_lat: location.lat,
@@ -113,11 +84,26 @@ export default function ExploreScreen() {
 
       if (error) throw error;
 
-      console.log("[Explorer] Résultats RPC:", (data as any[])?.length ?? 0, "rando(s) (randos où tu participes déjà exclues)");
-      setHikes((data as HikeWithCreator[]) ?? []);
+      const rpcHikes = (data as HikeWithCreator[]) ?? [];
+      console.log("[Explorer] Résultats RPC:", rpcHikes.length);
+
+      // Enrichir avec route_coordinates (absent du RPC déployé)
+      let enriched = rpcHikes;
+      if (rpcHikes.length > 0 && rpcHikes[0].route_coordinates === undefined) {
+        const ids = rpcHikes.map((h) => h.id);
+        const { data: routes } = await supabase
+          .from("hike")
+          .select("id, route_coordinates")
+          .in("id", ids);
+        const routeMap = Object.fromEntries(
+          (routes ?? []).map((r: any) => [r.id, r.route_coordinates])
+        );
+        enriched = rpcHikes.map((h) => ({ ...h, route_coordinates: routeMap[h.id] ?? null }));
+      }
+
+      setHikes(enriched);
       setCurrentIndex(0);
     } catch (error: any) {
-      // Fallback: simple query without geo filter
       try {
         let query = supabase
           .from("hike")
@@ -127,14 +113,11 @@ export default function ExploreScreen() {
           .order("date_start", { ascending: true })
           .limit(20);
 
-        if (filters.level) {
-          query = query.eq("level", filters.level);
-        }
+        if (filters.level) query = query.eq("level", filters.level);
 
         const { data: fallbackData, error: fallbackError } = await query;
         if (fallbackError) throw fallbackError;
 
-        // Exclude hikes where user is already a participant
         const { data: myParticipations } = await supabase
           .from("participation")
           .select("hike_id")
@@ -142,9 +125,7 @@ export default function ExploreScreen() {
           .eq("status", "confirmed");
 
         const myHikeIds = new Set((myParticipations ?? []).map((p: any) => p.hike_id));
-        const filtered = (fallbackData ?? []).filter((h: any) => !myHikeIds.has(h.id));
-
-        setHikes(filtered as HikeWithCreator[]);
+        setHikes(((fallbackData ?? []).filter((h: any) => !myHikeIds.has(h.id))) as HikeWithCreator[]);
         setCurrentIndex(0);
       } catch {
         setHikes([]);
@@ -168,7 +149,6 @@ export default function ExploreScreen() {
     if (!hike || !userId) return;
 
     try {
-      // Check active participations count
       const { count } = await supabase
         .from("participation")
         .select("id", { count: "exact", head: true })
@@ -179,12 +159,11 @@ export default function ExploreScreen() {
       if ((count ?? 0) >= 3) {
         Alert.alert(
           "Limite atteinte",
-          "Vous ne pouvez pas rejoindre plus de 3 randonnées simultanément. Terminez ou quittez une rando existante.",
+          "Vous ne pouvez pas rejoindre plus de 3 randonnées simultanément.",
         );
         return;
       }
 
-      // Insert participation
       const { error } = await supabase.from("participation").insert({
         user_id: userId,
         hike_id: hike.id,
@@ -209,21 +188,9 @@ export default function ExploreScreen() {
     setCurrentIndex((prev) => prev + 1);
   }, [hikes, currentIndex, userId]);
 
-  // ── Button handlers ──
-  const handlePassButton = () => {
-    if (currentIndex >= hikes.length) return;
-    handleSwipeLeft();
-  };
-
-  const handleJoinButton = () => {
-    if (currentIndex >= hikes.length) return;
-    handleSwipeRight();
-  };
-
   const handleDetailButton = () => {
     if (currentIndex >= hikes.length) return;
-    const hike = hikes[currentIndex];
-    router.push({ pathname: "/hike/[id]", params: { id: hike.id } });
+    router.push({ pathname: "/hike/[id]", params: { id: hikes[currentIndex].id } });
   };
 
   const handleMatchClose = () => {
@@ -233,30 +200,25 @@ export default function ExploreScreen() {
     setMatchHike(null);
   };
 
-  // ── Render ──
+  const handleMatchContinue = () => {
+    setMatchHike(null);
+  };
+
+  const filterPillLabel = `${filters.radiusKm} km · ${filters.level ? levelLabel(filters.level) : "Tous niveaux"}`;
+  const hasCards = currentIndex < hikes.length;
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#2E7D32" />
-        <Text style={styles.loadingText}>Recherche de randos à proximité...</Text>
+      <View style={styles.loadingScreen}>
+        <ActivityIndicator size="large" color="#1D9E75" />
+        <Text style={styles.loadingText}>Recherche de randos...</Text>
       </View>
     );
   }
 
-  const hasCards = currentIndex < hikes.length;
-
   return (
     <View style={styles.container}>
-      {/* Top bar */}
-      <View style={styles.topBar}>
-        <Text style={styles.logo}>lacet</Text>
-        <TouchableOpacity style={styles.filterBtn} onPress={() => setShowFilters(true)}>
-          <Text style={styles.filterBtnText}>Filtres</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Card stack */}
+      {/* Card stack — fills all available space */}
       <View style={styles.cardStack}>
         {hasCards ? (
           <>
@@ -286,10 +248,7 @@ export default function ExploreScreen() {
             <Text style={styles.emptySubtitle}>
               Essayez d'élargir votre rayon de recherche ou modifiez vos filtres.
             </Text>
-            <TouchableOpacity
-              style={styles.emptyButton}
-              onPress={() => setShowFilters(true)}
-            >
+            <TouchableOpacity style={styles.emptyButton} onPress={() => setShowFilters(true)}>
               <Text style={styles.emptyButtonText}>Modifier les filtres</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.reloadButton} onPress={fetchHikes}>
@@ -297,29 +256,36 @@ export default function ExploreScreen() {
             </TouchableOpacity>
           </View>
         )}
-      </View>
 
-      {/* Action bar */}
-      {hasCards && (
-        <View style={styles.actionBar}>
-          {/* Pass */}
-          <TouchableOpacity style={[styles.actionBtn, styles.passBtn]} onPress={handlePassButton}>
-            <Text style={styles.passIcon}>✕</Text>
-          </TouchableOpacity>
-
-          {/* Join */}
-          <TouchableOpacity style={[styles.actionBtn, styles.joinBtn]} onPress={handleJoinButton}>
-            <Text style={styles.joinIcon}>✓</Text>
-          </TouchableOpacity>
-
-          {/* Detail */}
-          <TouchableOpacity style={styles.actionBtn} onPress={handleDetailButton}>
-            <Text style={styles.detailIcon}>🔍</Text>
+        {/* Top overlay: logo + filter pill */}
+        <View style={[styles.topOverlay, { top: insets.top }]} pointerEvents="box-none">
+          <Text style={styles.logo}>lacet</Text>
+          <TouchableOpacity style={styles.filterPill} onPress={() => setShowFilters(true)}>
+            <View style={styles.filterIcon}>
+              <View style={styles.filterLine} />
+              <View style={[styles.filterLine, { width: 10 }]} />
+              <View style={[styles.filterLine, { width: 6 }]} />
+            </View>
+            <Text style={styles.filterPillText}>{filterPillLabel}</Text>
           </TouchableOpacity>
         </View>
-      )}
 
-      {/* Filters modal */}
+        {/* Action bar — overlaid at the bottom of the card */}
+        {hasCards && (
+          <View style={[styles.actionBar, { bottom: 14 }]}>
+            <TouchableOpacity style={styles.btnPass} onPress={handleSwipeLeft} activeOpacity={0.7}>
+              <Text style={styles.btnPassIcon}>✕</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.btnJoin} onPress={handleSwipeRight} activeOpacity={0.8}>
+              <Text style={styles.btnJoinIcon}>✓</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.btnInfo} onPress={handleDetailButton} activeOpacity={0.7}>
+              <Text style={styles.btnInfoIcon}>i</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+
       <FilterModal
         visible={showFilters}
         filters={filters}
@@ -330,97 +296,142 @@ export default function ExploreScreen() {
         }}
       />
 
-      {/* Match overlay */}
       <MatchOverlay
         visible={matchHike !== null}
         hikeName={matchHike?.title ?? ""}
         onViewGroup={handleMatchClose}
+        onContinue={handleMatchContinue}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
-  loadingText: { marginTop: 12, fontSize: 14, color: "#888" },
+  container: { flex: 1, backgroundColor: "#0a140c", overflow: "hidden" },
 
-  // Top bar
-  topBar: {
-    flexDirection: "row",
+  loadingScreen: {
+    flex: 1,
+    backgroundColor: "#0a140c",
+    justifyContent: "center",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 18,
-    paddingTop: 8,
-    paddingBottom: 10,
-    borderBottomWidth: 0.5,
-    borderBottomColor: "#e0e0e0",
   },
-  logo: { fontSize: 18, fontWeight: "500", color: "#1a1a1a", letterSpacing: -0.3 },
-  filterBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    backgroundColor: "#f5f5f5",
-    borderWidth: 0.5,
-    borderColor: "#e0e0e0",
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  filterBtnText: { fontSize: 12, color: "#666" },
+  loadingText: { marginTop: 12, fontSize: 14, color: "rgba(255,255,255,0.6)" },
 
   // Card stack
   cardStack: {
     flex: 1,
-    marginHorizontal: 14,
-    marginVertical: 12,
+    position: "relative",
   },
+
+  // Top overlay (logo + filter)
+  topOverlay: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    zIndex: 10,
+    pointerEvents: "box-none",
+  },
+  logo: {
+    fontSize: 18,
+    fontWeight: "500",
+    color: "white",
+    letterSpacing: -0.3,
+  },
+  filterPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    borderWidth: 0.5,
+    borderColor: "rgba(255,255,255,0.25)",
+    borderRadius: 20,
+    paddingHorizontal: 11,
+    paddingVertical: 5,
+  },
+  filterIcon: { gap: 2.5, alignItems: "flex-end" },
+  filterLine: { height: 1.5, width: 14, backgroundColor: "white", borderRadius: 1 },
+  filterPillText: { fontSize: 11, color: "white" },
 
   // Action bar
   actionBar: {
+    position: "absolute",
+    left: 0,
+    right: 0,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
     gap: 20,
-    paddingTop: 10,
-    paddingBottom: 14,
+    zIndex: 10,
   },
-  actionBtn: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    borderWidth: 0.5,
-    borderColor: "#ddd",
-    backgroundColor: "#fff",
+  btnPass: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
     justifyContent: "center",
     alignItems: "center",
   },
-  passBtn: { borderColor: "#F09595" },
-  passIcon: { fontSize: 20, color: "#E24B4A", fontWeight: "600" },
-  joinBtn: { width: 62, height: 62, borderRadius: 31, borderColor: "#5DCAA5" },
-  joinIcon: { fontSize: 24, color: "#1D9E75", fontWeight: "bold" },
-  detailIcon: { fontSize: 18 },
+  btnPassIcon: { fontSize: 20, color: "#E24B4A", fontWeight: "600", lineHeight: 24 },
+  btnJoin: {
+    width: 66,
+    height: 66,
+    borderRadius: 33,
+    backgroundColor: "#1D9E75",
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.25)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  btnJoinIcon: { fontSize: 26, color: "white", fontWeight: "600", lineHeight: 30 },
+  btnInfo: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderWidth: 0.5,
+    borderColor: "rgba(255,255,255,0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  btnInfoIcon: {
+    fontSize: 14,
+    color: "rgba(255,255,255,0.8)",
+    fontWeight: "600",
+    fontStyle: "italic",
+  },
 
   // Empty state
-  emptyState: { flex: 1, justifyContent: "center", alignItems: "center", padding: 32 },
+  emptyState: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 32,
+    backgroundColor: "#0a140c",
+    borderRadius: 16,
+  },
   emptyEmoji: { fontSize: 48, marginBottom: 16 },
-  emptyTitle: { fontSize: 20, fontWeight: "600", color: "#1a1a1a" },
+  emptyTitle: { fontSize: 20, fontWeight: "600", color: "white" },
   emptySubtitle: {
     fontSize: 14,
-    color: "#888",
+    color: "rgba(255,255,255,0.55)",
     textAlign: "center",
     marginTop: 8,
     lineHeight: 22,
   },
   emptyButton: {
     marginTop: 24,
-    backgroundColor: "#2E7D32",
+    backgroundColor: "#1D9E75",
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 12,
   },
-  emptyButtonText: { color: "#fff", fontSize: 14, fontWeight: "600" },
+  emptyButtonText: { color: "white", fontSize: 14, fontWeight: "600" },
   reloadButton: { marginTop: 12 },
-  reloadText: { color: "#2E7D32", fontSize: 14, fontWeight: "500" },
+  reloadText: { color: "#1D9E75", fontSize: 14, fontWeight: "500" },
 });

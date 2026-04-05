@@ -10,19 +10,28 @@ interface Props {
   visible: boolean;
   hikeName: string;
   onViewGroup: () => void;
+  onContinue?: () => void;
 }
 
-export default function MatchOverlay({ visible, hikeName, onViewGroup }: Props) {
+export default function MatchOverlay({ visible, hikeName, onViewGroup, onContinue }: Props) {
   return (
-    <Modal visible={visible} animationType="none" transparent>
+    <Modal visible={visible} animationType="fade" transparent>
       <View style={styles.overlay}>
-        <Text style={styles.emoji}>🎉</Text>
+        <View style={styles.iconCircle}>
+          <Text style={styles.iconText}>✓</Text>
+        </View>
         <Text style={styles.title}>Tu rejoins la rando !</Text>
         <Text style={styles.subtitle}>
-          Tu es ajouté au groupe «{hikeName}».{"\n"}Le chat est maintenant ouvert.
+          Tu es ajouté au groupe.{"\n"}Le chat est maintenant ouvert.
         </Text>
-        <TouchableOpacity style={styles.button} onPress={onViewGroup}>
-          <Text style={styles.buttonText}>Voir le groupe</Text>
+        <TouchableOpacity style={styles.primaryBtn} onPress={onViewGroup}>
+          <Text style={styles.primaryBtnText}>Voir le groupe</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.secondaryBtn}
+          onPress={onContinue ?? onViewGroup}
+        >
+          <Text style={styles.secondaryBtnText}>Continuer à explorer</Text>
         </TouchableOpacity>
       </View>
     </Modal>
@@ -32,26 +41,43 @@ export default function MatchOverlay({ visible, hikeName, onViewGroup }: Props) 
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(29,158,117,0.97)",
+    backgroundColor: "#1D9E75",
     justifyContent: "center",
     alignItems: "center",
     padding: 32,
   },
-  emoji: { fontSize: 40, marginBottom: 12 },
-  title: { fontSize: 26, fontWeight: "500", color: "#fff" },
+  iconCircle: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 18,
+  },
+  iconText: { fontSize: 30, color: "white", fontWeight: "600", lineHeight: 34 },
+  title: {
+    fontSize: 26,
+    fontWeight: "500",
+    color: "white",
+    marginBottom: 10,
+    textAlign: "center",
+    letterSpacing: -0.3,
+  },
   subtitle: {
     fontSize: 14,
-    color: "rgba(255,255,255,0.85)",
+    color: "rgba(255,255,255,0.8)",
     textAlign: "center",
-    marginTop: 8,
     lineHeight: 22,
+    marginBottom: 28,
   },
-  button: {
-    marginTop: 24,
-    backgroundColor: "#fff",
+  primaryBtn: {
+    backgroundColor: "white",
     paddingVertical: 12,
     paddingHorizontal: 28,
     borderRadius: 24,
   },
-  buttonText: { fontSize: 14, fontWeight: "500", color: "#085041" },
+  primaryBtnText: { fontSize: 14, fontWeight: "500", color: "#085041" },
+  secondaryBtn: { marginTop: 12, padding: 8 },
+  secondaryBtnText: { fontSize: 13, color: "rgba(255,255,255,0.7)" },
 });

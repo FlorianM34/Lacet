@@ -7,13 +7,15 @@ import {
   Animated,
   PanResponder,
 } from "react-native";
-import Mapbox, { MapView, Camera, ShapeSource, LineLayer } from "@rnmapbox/maps";
+import { LinearGradient } from "expo-linear-gradient";
+import Mapbox, { MapView, MarkerView, Camera, ShapeSource, LineLayer } from "@rnmapbox/maps";
 import type { HikeWithCreator, HikeLevel } from "../types";
 
 Mapbox.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_TOKEN ?? "");
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const SWIPE_THRESHOLD = 80;
+const GREEN = "#1D9E75";
 
 interface Props {
   hike: HikeWithCreator;
@@ -31,14 +33,10 @@ function formatDuration(min: number): string {
 }
 
 function formatDate(dateStr: string, flexible: boolean): string {
-  if (flexible) {
-    const d = new Date(dateStr);
-    const months = ["jan.", "fév.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
-    return `Flexible ${months[d.getMonth()]}`;
-  }
   const d = new Date(dateStr);
-  const days = ["Dim.", "Lun.", "Mar.", "Mer.", "Jeu.", "Ven.", "Sam."];
   const months = ["jan.", "fév.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+  if (flexible) return `Flexible ${months[d.getMonth()]}`;
+  const days = ["Dim.", "Lun.", "Mar.", "Mer.", "Jeu.", "Ven.", "Sam."];
   return `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]}`;
 }
 
@@ -75,19 +73,12 @@ export default function HikeCard({ hike, onSwipeLeft, onSwipeRight, isTop }: Pro
   const likeOpacity = useRef(new Animated.Value(0)).current;
   const nopeOpacity = useRef(new Animated.Value(0)).current;
 
-  // Keep a mutable ref so PanResponder callbacks always see the latest isTop value
   const isTopRef = useRef(isTop);
   isTopRef.current = isTop;
 
   const rotate = translateX.interpolate({
     inputRange: [-SCREEN_WIDTH, 0, SCREEN_WIDTH],
     outputRange: ["-18deg", "0deg", "18deg"],
-    extrapolate: "clamp",
-  });
-
-  const cardBg = translateX.interpolate({
-    inputRange: [-120, 0, 120],
-    outputRange: ["rgb(246, 217, 210)", "#FFFFFF", "#e5fdf6"],
     extrapolate: "clamp",
   });
 
@@ -98,7 +89,6 @@ export default function HikeCard({ hike, onSwipeLeft, onSwipeRight, isTop }: Pro
       onPanResponderMove: (_, gestureState) => {
         if (!isTopRef.current) return;
         translateX.setValue(gestureState.dx);
-        // Update hint opacities
         if (gestureState.dx > 30) {
           likeOpacity.setValue(Math.min((gestureState.dx - 30) / 60, 1));
           nopeOpacity.setValue(0);
@@ -125,11 +115,7 @@ export default function HikeCard({ hike, onSwipeLeft, onSwipeRight, isTop }: Pro
             useNativeDriver: true,
           }).start(onSwipeLeft);
         } else {
-          Animated.spring(translateX, {
-            toValue: 0,
-            useNativeDriver: true,
-            friction: 5,
-          }).start();
+          Animated.spring(translateX, { toValue: 0, useNativeDriver: true, friction: 5 }).start();
           Animated.timing(likeOpacity, { toValue: 0, duration: 150, useNativeDriver: true }).start();
           Animated.timing(nopeOpacity, { toValue: 0, duration: 150, useNativeDriver: true }).start();
         }
@@ -137,42 +123,26 @@ export default function HikeCard({ hike, onSwipeLeft, onSwipeRight, isTop }: Pro
     })
   ).current;
 
-  // Trigger swipe programmatically
-  (HikeCard as any).swipeLeft = () => {
-    Animated.timing(translateX, {
-      toValue: -SCREEN_WIDTH * 1.4,
-      duration: 300,
-      useNativeDriver: true,
-    }).start(onSwipeLeft);
-  };
-  (HikeCard as any).swipeRight = () => {
-    Animated.timing(translateX, {
-      toValue: SCREEN_WIDTH * 1.4,
-      duration: 300,
-      useNativeDriver: true,
-    }).start(onSwipeRight);
-  };
-
   const placesLeft = hike.max_participants - hike.current_count;
-
   const coords = hike.start_location?.coordinates;
-  const mapCenter: [number, number] = coords ? [coords[0], coords[1]] : [2.35, 48.85];
 
   const route = hike.route_coordinates;
   const hasRoute = Array.isArray(route) && route.length >= 2;
 
-  const cameraBounds = hasRoute ? (() => {
-    const lngs = route!.map((c) => c[0]);
-    const lats = route!.map((c) => c[1]);
-    return {
-      ne: [Math.max(...lngs), Math.max(...lats)] as [number, number],
-      sw: [Math.min(...lngs), Math.min(...lats)] as [number, number],
-      paddingTop: 24,
-      paddingBottom: 24,
-      paddingLeft: 24,
-      paddingRight: 24,
-    };
-  })() : null;
+  const cameraBounds = hasRoute
+    ? (() => {
+      const lngs = route!.map((c) => c[0]);
+      const lats = route!.map((c) => c[1]);
+      return {
+        ne: [Math.max(...lngs), Math.max(...lats)] as [number, number],
+        sw: [Math.min(...lngs), Math.min(...lats)] as [number, number],
+        paddingTop: 80,
+        paddingBottom: 220,
+        paddingLeft: 32,
+        paddingRight: 32,
+      };
+    })()
+    : null;
 
   const lineGeoJSON = {
     type: "Feature" as const,
@@ -184,162 +154,135 @@ export default function HikeCard({ hike, onSwipeLeft, onSwipeRight, isTop }: Pro
   const creatorAge = creator?.birth_date ? getAge(creator.birth_date) : null;
 
   const cardStyle = isTop
-    ? { transform: [{ translateX }, { rotate }], backgroundColor: cardBg }
-    : { transform: [{ scale: 0.95 }, { translateY: 8 }] };
+    ? { transform: [{ translateX }, { rotate }] }
+    : { transform: [{ scale: 0.97 }, { translateY: 10 }], opacity: 0.75 };
 
   return (
     <Animated.View
       style={[styles.card, cardStyle]}
       {...(isTop ? panResponder.panHandlers : {})}
     >
+      {/* Map fills entire card */}
+      <MapView
+        style={styles.map}
+        styleURL="mapbox://styles/mapbox/outdoors-v12"
+        scrollEnabled={true}
+        zoomEnabled={false}
+        rotateEnabled={false}
+        pitchEnabled={false}
+        attributionEnabled={false}
+        logoEnabled={false}
+      >
+        {cameraBounds ? (
+          <Camera bounds={cameraBounds} animationMode="none" animationDuration={0} />
+        ) : (
+          <Camera centerCoordinate={coords} zoomLevel={12} animationMode="none" animationDuration={0} />
+        )}
+        {hasRoute && (
+          <ShapeSource id="route-detail" shape={lineGeoJSON}>
+            <LineLayer
+              id="routeLine-detail"
+              style={{
+                lineColor: "#1D9E75",
+                lineWidth: 3,
+                lineOpacity: 0.9,
+                lineCap: "round",
+                lineJoin: "round",
+              }}
+            />
+          </ShapeSource>
+        )}
+        <MarkerView coordinate={coords}>
+          <View style={styles.marker}>
+            <View style={styles.markerDot} />
+          </View>
+        </MarkerView>
+      </MapView>
+
+      {/* Gradient overlay */}
+      <LinearGradient
+        colors={["rgba(6,16,10,0.72)", "transparent", "rgba(8,20,12,0.55)", "rgba(6,16,10,0.97)"]}
+        locations={[0, 0.25, 0.55, 0.82]}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      />
+
       {/* Swipe hints */}
       {isTop && (
         <>
-          <Animated.View style={[styles.likeHint, { opacity: likeOpacity }]}>
-            <Text style={styles.likeHintText}>Rejoindre</Text>
+          <Animated.View style={[styles.joinHint, { opacity: likeOpacity }]}>
+            <Text style={styles.joinHintText}>Rejoindre</Text>
           </Animated.View>
-          <Animated.View style={[styles.nopeHint, { opacity: nopeOpacity }]}>
-            <Text style={styles.nopeHintText}>Passer</Text>
+          <Animated.View style={[styles.passHint, { opacity: nopeOpacity }]}>
+            <Text style={styles.passHintText}>Passer</Text>
           </Animated.View>
         </>
       )}
 
-      {/* Mini map */}
-      <View style={styles.mapArea}>
-        <MapView
-          style={styles.miniMap}
-          styleURL="mapbox://styles/mapbox/outdoors-v12"
-          scrollEnabled={false}
-          zoomEnabled={false}
-          rotateEnabled={false}
-          pitchEnabled={false}
-          attributionEnabled={false}
-          logoEnabled={false}
-        >
-          {cameraBounds ? (
-            <Camera bounds={cameraBounds} animationMode="none" animationDuration={0} />
-          ) : (
-            <Camera
-              defaultSettings={{ centerCoordinate: [2.35, 48.85], zoomLevel: 8 }}
-              centerCoordinate={mapCenter}
-              zoomLevel={11}
-              animationMode="none"
-              animationDuration={0}
-            />
-          )}
+      {/* Info panel */}
+      <View style={styles.infoPanel}>
+        <Text style={styles.hikeTitle} numberOfLines={2}>{hike.title}</Text>
 
-          {hasRoute && (
-            <ShapeSource id={`route-${hike.id}`} shape={lineGeoJSON}>
-              <LineLayer
-                id={`routeLine-${hike.id}`}
-                style={{
-                  lineColor: "#1D9E75",
-                  lineWidth: 2.5,
-                  lineOpacity: 0.9,
-                  lineCap: "round",
-                  lineJoin: "round",
-                }}
-              />
-            </ShapeSource>
-          )}
-        </MapView>
-      </View>
-
-      {/* Card body */}
-      <View style={styles.body}>
-
-        {/* Title */}
-        <Text style={styles.cardTitle} numberOfLines={2}>{hike.title}</Text>
-
-        {/* Stats 2×2 grid */}
-        <View style={styles.statsGrid}>
-          <View style={styles.statBox}>
-            <Text style={styles.statBoxValue}>{hike.distance_km} km</Text>
-            <Text style={styles.statBoxLabel}>Distance</Text>
+        {/* Stats row */}
+        <View style={styles.statsRow}>
+          <View style={styles.stat}>
+            <Text style={styles.statVal}>{hike.distance_km} km</Text>
+            <Text style={styles.statLbl}>distance</Text>
           </View>
-          <View style={[styles.statBox, styles.statBoxBorderLeft]}>
-            <Text style={styles.statBoxValue}>{formatDuration(hike.duration_min)}</Text>
-            <Text style={styles.statBoxLabel}>Durée</Text>
+          <View style={styles.stat}>
+            <Text style={styles.statVal}>{formatDuration(hike.duration_min)}</Text>
+            <Text style={styles.statLbl}>durée</Text>
           </View>
-          <View style={[styles.statBox, styles.statBoxBorderTop]}>
-            <Text style={styles.statBoxValue}>+{hike.elevation_m} m</Text>
-            <Text style={styles.statBoxLabel}>Dénivelé</Text>
+          <View style={styles.stat}>
+            <Text style={styles.statVal}>{hike.elevation_m} m</Text>
+            <Text style={styles.statLbl}>dénivelé</Text>
           </View>
-          <View style={[styles.statBox, styles.statBoxBorderLeft, styles.statBoxBorderTop, placesLeft <= 2 && styles.statBoxUrgent]}>
-            <Text style={[styles.statBoxValue, placesLeft <= 2 && styles.statBoxValueUrgent]}>
+          <View style={[styles.stat, placesLeft <= 2 && styles.statUrgent]}>
+            <Text style={[styles.statVal, placesLeft <= 2 && styles.statValUrgent]}>
               {placesLeft}/{hike.max_participants}
             </Text>
-            <Text style={[styles.statBoxLabel, placesLeft <= 2 && styles.statBoxLabelUrgent]}>
-              {placesLeft <= 2 ? "Presque complet" : "Places libre"}
+            <Text style={styles.statLbl}>places</Text>
+          </View>
+        </View>
+
+        {/* Tags row */}
+        <View style={styles.tagsRow}>
+          <View style={styles.tag}>
+            <Text style={styles.tagText}>{formatDate(hike.date_start, hike.date_flexible)}</Text>
+          </View>
+          <View style={styles.tag}>
+            <Text style={styles.tagText}>{levelLabel(hike.level)}</Text>
+          </View>
+          {hike.has_vehicle && (
+            <View style={[styles.tag, styles.tagGreen]}>
+              <Text style={[styles.tagText, styles.tagGreenText]}>Voiturage</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Organizer */}
+        <View style={styles.organizer}>
+          <View style={styles.orgAvatar}>
+            <Text style={styles.orgAvatarText}>
+              {creator ? getInitials(creator.display_name) : "?"}
+            </Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.orgName}>
+              {creator?.display_name ?? "Organisateur"}
+              {creatorAge ? ` · ${creatorAge} ans` : ""}
+            </Text>
+            <Text style={styles.orgRating}>
+              {creator && creator.rating_count > 0
+                ? `★ ${creator.rating_avg.toFixed(1)} · ${creator.rating_count} rando${creator.rating_count > 1 ? "s" : ""} organisée${creator.rating_count > 1 ? "s" : ""}`
+                : "Nouveau organisateur"}
             </Text>
           </View>
         </View>
-
-        {/* Date section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Date</Text>
-          <View style={styles.dateRow}>
-            <Text style={styles.dateText}>{formatDate(hike.date_start, hike.date_flexible)}</Text>
-            {hike.date_flexible && (
-              <View style={styles.flexibleBadge}>
-                <Text style={styles.flexibleBadgeText}>Flexible</Text>
-              </View>
-            )}
-          </View>
-        </View>
-
-        {/* Description section */}
-        {hike.description ? (
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>À propos</Text>
-            <Text style={styles.description} numberOfLines={2}>{hike.description}</Text>
-          </View>
-        ) : null}
-
-        {/* Niveau & options */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Niveau</Text>
-          <View style={styles.tagsRow}>
-            <View style={[styles.tag, styles.tagAmber]}>
-              <Text style={[styles.tagText, styles.tagAmberText]}>{levelLabel(hike.level)}</Text>
-            </View>
-            {hike.has_vehicle && (
-              <View style={[styles.tag, styles.tagPurple]}>
-                <Text style={[styles.tagText, styles.tagPurpleText]}>Voiturage 🚗</Text>
-              </View>
-            )}
-          </View>
-        </View>
-
-        {/* Organisateur section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Organisateur</Text>
-          <View style={styles.organizer}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>
-                {creator ? getInitials(creator.display_name) : "?"}
-              </Text>
-            </View>
-            <View style={styles.orgInfo}>
-              <Text style={styles.orgName}>{creator?.display_name ?? "Organisateur"}</Text>
-              <Text style={styles.orgRating}>
-                {creatorAge ? `${creatorAge} ans` : ""}
-                {creator && creator.rating_count > 0
-                  ? `  ·  ★ ${creator.rating_avg.toFixed(1)}  ·  ${creator.rating_count} rando${creator.rating_count > 1 ? "s" : ""}`
-                  : "  ·  Nouveau"}
-              </Text>
-            </View>
-          </View>
-        </View>
-
       </View>
     </Animated.View>
   );
 }
-
-// Expose programmatic swipe methods via ref-like pattern
-HikeCard.swipeLeft = () => {};
-HikeCard.swipeRight = () => {};
 
 const styles = StyleSheet.create({
   card: {
@@ -348,138 +291,131 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "#fff",
-    borderRadius: 18,
-    borderWidth: 0.5,
-    borderColor: "#1D9E75",
     overflow: "hidden",
+    backgroundColor: "#1a2e20",
+  },
+  // Map
+  map: {flex: 1},
+  marker: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "rgba(29,158,117,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  markerDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: GREEN,
+    borderWidth: 2,
+    borderColor: "#fff",
   },
 
   // Swipe hints
-  likeHint: {
+  joinHint: {
     position: "absolute",
-    top: 16,
-    left: 14,
-    backgroundColor: "#E1F5EE",
-    borderWidth: 1.5,
-    borderColor: "#1D9E75",
+    top: 80,
+    left: 18,
+    backgroundColor: "#1D9E75",
+    borderWidth: 2,
+    borderColor: "white",
     borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    zIndex: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    zIndex: 20,
+    transform: [{ rotate: "-15deg" }],
   },
-  likeHintText: { fontSize: 13, fontWeight: "500", color: "#085041" },
-  nopeHint: {
+  joinHintText: { fontSize: 13, fontWeight: "600", color: "white" },
+  passHint: {
     position: "absolute",
-    top: 16,
-    right: 14,
-    backgroundColor: "#FCEBEB",
-    borderWidth: 1.5,
-    borderColor: "#E24B4A",
+    top: 80,
+    right: 18,
+    backgroundColor: "#E24B4A",
+    borderWidth: 2,
+    borderColor: "white",
     borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    zIndex: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    zIndex: 20,
+    transform: [{ rotate: "15deg" }],
   },
-  nopeHintText: { fontSize: 13, fontWeight: "500", color: "#A32D2D" },
+  passHintText: { fontSize: 13, fontWeight: "600", color: "white" },
 
-  // Mini map
-  mapArea: { height: 160, backgroundColor: "#e8f0e4" },
-  miniMap: { flex: 1 },
+  // Info panel
+  infoPanel: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 16,
+    paddingBottom: 100,
+  },
+  hikeTitle: {
+    fontSize: 20,
+    fontWeight: "500",
+    color: "white",
+    marginBottom: 4,
+    lineHeight: 24,
+    letterSpacing: -0.3,
+  },
 
-  // Body
-  body: { paddingHorizontal: 14, paddingTop: 12, paddingBottom: 12, flex: 1, gap: 0 },
-
-  cardTitle: { fontSize: 17, fontWeight: "600", color: "#1a1a1a", lineHeight: 22, marginBottom: 10 },
-
-  // Stats 2×2 grid
-  statsGrid: {
+  // Stats row
+  statsRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    borderWidth: 0.5,
-    borderColor: "#e8e8e8",
-    borderRadius: 10,
-    overflow: "hidden",
-    marginBottom: 0,
+    gap: 6,
+    marginBottom: 10,
+    marginTop: 8,
   },
-  statBox: {
-    width: "50%",
-    paddingVertical: 10,
+  stat: {
+    flex: 1,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderWidth: 0.5,
+    borderColor: "rgba(255,255,255,0.2)",
+    borderRadius: 8,
+    paddingVertical: 7,
     alignItems: "center",
-    backgroundColor: "#fafafa",
   },
-  statBoxBorderLeft: { borderLeftWidth: 0.5, borderLeftColor: "#e8e8e8" },
-  statBoxBorderTop: { borderTopWidth: 0.5, borderTopColor: "#e8e8e8" },
-  statBoxUrgent: { backgroundColor: "#FFF8ED" },
-  statBoxValue: { fontSize: 16, fontWeight: "600", color: "#1a1a1a" },
-  statBoxValueUrgent: { color: "#B45309" },
-  statBoxLabel: { fontSize: 10, color: "#999", marginTop: 2 },
-  statBoxLabelUrgent: { color: "#D97706" },
-
-  // Sections
-  section: {
-    borderTopWidth: 0.5,
-    borderTopColor: "#ececec",
-    paddingTop: 9,
-    marginTop: 9,
+  statUrgent: {
+    backgroundColor: "rgba(250,163,53,0.22)",
+    borderColor: "rgba(250,163,53,0.4)",
   },
-  sectionLabel: {
-    fontSize: 9,
-    fontWeight: "700",
-    color: "#bbb",
-    letterSpacing: 0.8,
-    textTransform: "uppercase",
-    marginBottom: 5,
-  },
+  statVal: { fontSize: 12, fontWeight: "600", color: "white" },
+  statValUrgent: { color: "#FAC040" },
+  statLbl: { fontSize: 9, color: "rgba(255,255,255,0.55)", marginTop: 1 },
 
-  // Date
-  dateRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  dateText: { fontSize: 12, fontWeight: "500", color: "#1a1a1a" },
-  flexibleBadge: {
-    backgroundColor: "#E1F5EE",
-    borderWidth: 0.5,
-    borderColor: "#9FE1CB",
-    borderRadius: 20,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-  },
-  flexibleBadgeText: { fontSize: 10, color: "#085041", fontWeight: "500" },
-
-  // Description preview
-  description: { fontSize: 12, color: "#666", lineHeight: 17, fontWeight: "500" },
-
-  // Tags
-  tagsRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+  // Tags row
+  tagsRow: { flexDirection: "row", gap: 5, flexWrap: "wrap", marginBottom: 10 },
   tag: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 20,
-    backgroundColor: "#E1F5EE",
+    backgroundColor: "rgba(255,255,255,0.15)",
     borderWidth: 0.5,
-    borderColor: "#9FE1CB",
+    borderColor: "rgba(255,255,255,0.2)",
+    borderRadius: 12,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
   },
-  tagText: { fontSize: 11, color: "#085041" },
-  tagAmber: { backgroundColor: "#FAEEDA", borderColor: "#FAC775" },
-  tagAmberText: { color: "#633806" },
-  tagPurple: { backgroundColor: "#EEEDFE", borderColor: "#CECBF6" },
-  tagPurpleText: { color: "#3C3489" },
+  tagText: { fontSize: 10, color: "white" },
+  tagGreen: {
+    backgroundColor: "rgba(29,158,117,0.35)",
+    borderColor: "rgba(29,158,117,0.6)",
+  },
+  tagGreenText: { color: "#9FE1CB" },
 
   // Organizer
-  organizer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  avatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+  organizer: { flexDirection: "row", alignItems: "center", gap: 8 },
+  orgAvatar: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     backgroundColor: "#E1F5EE",
     justifyContent: "center",
     alignItems: "center",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.4)",
+    flexShrink: 0,
   },
-  avatarText: { fontSize: 11, fontWeight: "500", color: "#085041" },
-  orgInfo: { flex: 1 },
-  orgName: { fontSize: 12, fontWeight: "500", color: "#1a1a1a" },
-  orgRating: { fontSize: 11, color: "#999" },
+  orgAvatarText: { fontSize: 10, fontWeight: "600", color: "#085041" },
+  orgName: { fontSize: 12, color: "rgba(255,255,255,0.9)", fontWeight: "500" },
+  orgRating: { fontSize: 10, color: "rgba(255,255,255,0.5)", marginTop: 1 },
 });

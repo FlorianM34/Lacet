@@ -165,7 +165,9 @@ export default function HikeDetailScreen() {
 
   const route = hike.route_coordinates;
   const hasRoute = Array.isArray(route) && route.length >= 2;
-
+  console.log(`[HikeCard] "${hike.title}" route_coordinates:`, route === null ? "null" : route === undefined ? "undefined (RPC manquant)" : `${route.length} points`);
+  console.log(route?.length)
+    
   const cameraBounds = hasRoute ? (() => {
     const lngs = route!.map((c) => c[0]);
     const lats = route!.map((c) => c[1]);
