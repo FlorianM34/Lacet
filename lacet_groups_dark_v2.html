@@ -1,0 +1,185 @@
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.phone{width:300px;margin:1.5rem auto;border-radius:36px;border:1.5px solid #1a2a1e;overflow:hidden;background:#0f1f14;font-family:var(--font-sans)}
+.status-bar{display:flex;justify-content:space-between;padding:10px 20px 0;font-size:11px;font-weight:500;color:white}
+.top-bar{display:flex;align-items:center;justify-content:space-between;padding:8px 16px 14px}
+.top-title{font-size:18px;font-weight:500;color:white}
+.search-btn{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;cursor:pointer}
+
+.tabs{display:flex;padding:0 16px 14px;gap:8px}
+.tab{padding:6px 14px;border-radius:20px;font-size:12px;cursor:pointer;transition:all 0.2s;border:0.5px solid transparent}
+.tab.active{background:#1D9E75;color:white;font-weight:500}
+.tab.inactive{color:rgba(255,255,255,0.4);border-color:rgba(255,255,255,0.1)}
+
+.groups-list{padding:0 16px 16px;display:flex;flex-direction:column;gap:2px}
+
+.group-row{display:flex;align-items:center;gap:12px;padding:13px 14px;background:#162a1c;cursor:pointer;transition:background 0.15s;border-radius:0}
+.group-row:first-child{border-radius:14px 14px 0 0}
+.group-row:last-child{border-radius:0 0 14px 14px}
+.group-row:only-child{border-radius:14px}
+.group-row + .group-row{border-top:0.5px solid rgba(255,255,255,0.05)}
+.group-row:hover{background:#1a3022}
+.group-row:active{background:#1e3828}
+
+.row-left{flex:1;min-width:0}
+.row-title{font-size:13px;font-weight:500;color:white;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row-title.unread{color:white}
+.row-meta{font-size:11px;color:rgba(255,255,255,0.35);display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.row-preview{font-size:11px;color:rgba(255,255,255,0.3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row-preview.unread{color:rgba(255,255,255,0.65);font-weight:500}
+
+.row-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
+.row-time{font-size:10px;color:rgba(255,255,255,0.25)}
+.row-time.unread{color:#E24B4A}
+.unread-badge{background:#E24B4A;border-radius:9px;padding:2px 6px;font-size:10px;font-weight:500;color:white;min-width:18px;text-align:center}
+
+.status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.dot-upcoming{background:#1D9E75}
+.dot-rate{background:#EF9F27}
+.dot-done{background:rgba(255,255,255,0.15)}
+
+.members-row{display:flex;align-items:center}
+.m-av{width:18px;height:18px;border-radius:50%;border:1.5px solid #162a1c;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:500;margin-left:-5px}
+.m-av:first-child{margin-left:0}
+
+.section-label{font-size:10px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:rgba(255,255,255,0.2);padding:14px 16px 6px}
+
+.bottom-nav{background:#0a1510;border-top:0.5px solid rgba(255,255,255,0.08);display:flex;justify-content:space-around;padding:8px 0 14px}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;position:relative}
+.nav-lbl{font-size:10px;color:rgba(255,255,255,0.3)}
+.nav-lbl.active{color:#1D9E75}
+.nav-dot{width:4px;height:4px;border-radius:50%;background:#1D9E75}
+.nav-unread{position:absolute;top:-3px;right:-4px;width:7px;height:7px;border-radius:50%;background:#E24B4A;border:1.5px solid #0a1510}
+</style>
+
+<div class="phone">
+  <div class="status-bar"><span>9:41</span><span>●●●</span></div>
+  <div class="top-bar">
+    <span class="top-title">Mes groupes</span>
+    <div class="search-btn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/><path d="M16.5 16.5L21 21" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('upcoming',this)">À venir</div>
+    <div class="tab inactive" onclick="switchTab('done',this)">Terminées</div>
+  </div>
+
+  <div id="tab-upcoming">
+    <div class="groups-list">
+      <div class="group-row" style="border-radius:14px 14px 0 0">
+        <div class="status-dot dot-upcoming"></div>
+        <div class="row-left">
+          <div class="row-title unread">Tour du Pic Saint-Loup</div>
+          <div class="row-meta">
+            <div class="members-row">
+              <div class="m-av" style="background:#E1F5EE;color:#085041">TC</div>
+              <div class="m-av" style="background:#EEEDFE;color:#3C3489">ML</div>
+              <div class="m-av" style="background:#FAEEDA;color:#633806">JD</div>
+              <div class="m-av" style="background:#FAECE7;color:#712B13">SA</div>
+            </div>
+            <span>4/5 · Sam. 5 avr.</span>
+          </div>
+          <div class="row-preview unread">Sofia : Je peux prendre 2 personnes en voiture</div>
+        </div>
+        <div class="row-right">
+          <div class="row-time unread">09:38</div>
+          <div class="unread-badge">3</div>
+        </div>
+      </div>
+
+      <div class="group-row" style="border-radius:0 0 14px 14px">
+        <div class="status-dot dot-upcoming"></div>
+        <div class="row-left">
+          <div class="row-title">Mont Aigoual</div>
+          <div class="row-meta">
+            <div class="members-row">
+              <div class="m-av" style="background:#E1F5EE;color:#085041">TC</div>
+              <div class="m-av" style="background:#EEEDFE;color:#3C3489">ML</div>
+            </div>
+            <span>2/4 · 19 avr.</span>
+          </div>
+          <div class="row-preview">Groupe créé · 2 membres</div>
+        </div>
+        <div class="row-right">
+          <div class="row-time">Lun.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-done" style="display:none">
+    <div class="groups-list">
+      <div class="group-row" style="border-radius:14px 14px 0 0">
+        <div class="status-dot dot-rate"></div>
+        <div class="row-left">
+          <div class="row-title">Gorges du Verdon</div>
+          <div class="row-meta">
+            <div class="members-row">
+              <div class="m-av" style="background:#E1F5EE;color:#085041">TC</div>
+              <div class="m-av" style="background:#FAEEDA;color:#633806">JD</div>
+              <div class="m-av" style="background:#FAECE7;color:#712B13">SA</div>
+            </div>
+            <span>3 participants · 22 mars</span>
+          </div>
+          <div class="row-preview" style="color:#FAC775">À noter — en attente des autres</div>
+        </div>
+        <div class="row-right">
+          <div class="row-time">Hier</div>
+          <div style="width:7px;height:7px;border-radius:50%;background:#EF9F27"></div>
+        </div>
+      </div>
+
+      <div class="group-row" style="border-radius:0 0 14px 14px">
+        <div class="status-dot dot-done"></div>
+        <div class="row-left">
+          <div class="row-title">Crête de Belledonne</div>
+          <div class="row-meta">
+            <div class="members-row">
+              <div class="m-av" style="background:#EEEDFE;color:#3C3489">ML</div>
+              <div class="m-av" style="background:#E1F5EE;color:#085041">TC</div>
+              <div class="m-av" style="background:#FAEEDA;color:#633806">JD</div>
+              <div class="m-av" style="background:#FAECE7;color:#712B13">SA</div>
+            </div>
+            <span>4 participants · 10 mars</span>
+          </div>
+          <div class="row-preview">Notes révélées · 4.8 ★ en moyenne</div>
+        </div>
+        <div class="row-right">
+          <div class="row-time">Lun.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-item">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/></svg>
+      <span class="nav-lbl">Explorer</span>
+    </div>
+    <div class="nav-item">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="#1D9E75" stroke-width="1.5"/><circle cx="9" cy="7" r="4" stroke="#1D9E75" stroke-width="1.5"/></svg>
+      <span class="nav-lbl active">Groupes</span>
+      <div class="nav-unread"></div>
+      <div class="nav-dot"></div>
+    </div>
+    <div class="nav-item">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <span class="nav-lbl">Créer</span>
+    </div>
+    <div class="nav-item">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/></svg>
+      <span class="nav-lbl">Profil</span>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchTab(tab, el) {
+  document.querySelectorAll('.tab').forEach(t => { t.classList.remove('active'); t.classList.add('inactive'); });
+  el.classList.add('active'); el.classList.remove('inactive');
+  document.getElementById('tab-upcoming').style.display = tab === 'upcoming' ? 'block' : 'none';
+  document.getElementById('tab-done').style.display = tab === 'done' ? 'block' : 'none';
+}
+</script>

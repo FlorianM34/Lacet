@@ -56,10 +56,10 @@ const LEVEL_LABELS: Record<HikeLevel, string> = {
 };
 
 const LEVEL_COLORS: Record<HikeLevel, { bg: string; text: string; border: string }> = {
-  easy:         { bg: "#E1F5EE", text: "#085041", border: "#9FE1CB" },
-  intermediate: { bg: "#FAEEDA", text: "#633806", border: "#FAC775" },
-  hard:         { bg: "#FAECE7", text: "#712B13", border: "#F4A98A" },
-  expert:       { bg: "#EEEDFE", text: "#3C3489", border: "#CECBF6" },
+  easy:         { bg: "rgba(29,158,117,0.15)",  text: "#1D9E75",  border: "rgba(29,158,117,0.3)"  },
+  intermediate: { bg: "rgba(239,159,39,0.15)",  text: "#EF9F27",  border: "rgba(239,159,39,0.3)"  },
+  hard:         { bg: "rgba(226,75,74,0.15)",   text: "#E87170",  border: "rgba(226,75,74,0.3)"   },
+  expert:       { bg: "rgba(108,100,237,0.15)", text: "#9B96F0",  border: "rgba(108,100,237,0.3)" },
 };
 
 interface Member {
@@ -291,7 +291,7 @@ export default function HikeDetailScreen() {
 
         {/* Back button overlay */}
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={20} color="#1a1a1a" />
+          <Ionicons name="chevron-back" size={20} color="white" />
         </TouchableOpacity>
       </View>
 
@@ -368,7 +368,7 @@ export default function HikeDetailScreen() {
                   : " · Nouveau"}
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color="#C0C0C0" />
+            <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.2)" />
           </TouchableOpacity>
         </View>
       )}
@@ -467,7 +467,7 @@ function InfoRow({
   const isPill = valueStyle && ("backgroundColor" in valueStyle);
   return (
     <View style={styles.infoRow}>
-      <Ionicons name={icon} size={15} color="#9A9A9A" />
+      <Ionicons name={icon} size={15} color="rgba(255,255,255,0.3)" />
       <Text style={styles.infoLabel}>{label}</Text>
       {isPill ? (
         <View style={[styles.levelPill, valueStyle]}>
@@ -487,13 +487,13 @@ function Divider() {
 // ── Styles ──
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#FAFAFA" },
+  container: { flex: 1, backgroundColor: "#0f1f14" },
   content: { paddingBottom: 40 },
-  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
-  errorText: { fontSize: 15, color: "#9A9A9A" },
+  centered: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#0f1f14" },
+  errorText: { fontSize: 15, color: "rgba(255,255,255,0.35)" },
 
   // Map
-  mapContainer: { height: 240, backgroundColor: "#dce8d6" },
+  mapContainer: { height: 240, backgroundColor: "#0a1a10" },
   map: { flex: 1 },
   backBtn: {
     position: "absolute",
@@ -502,19 +502,19 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: "rgba(255,255,255,0.92)",
+    backgroundColor: "rgba(0,0,0,0.45)",
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
   },
   marker: {
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: "rgba(29,158,117,0.2)",
+    backgroundColor: "rgba(29,158,117,0.25)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -524,7 +524,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: GREEN,
     borderWidth: 2,
-    borderColor: "#fff",
+    borderColor: "#0f1f14",
   },
 
   // Title
@@ -536,16 +536,16 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     gap: 8,
   },
-  title: { fontSize: 20, fontWeight: "600", color: "#1A1A1A", flex: 1 },
+  title: { fontSize: 20, fontWeight: "600", color: "white", flex: 1 },
   fullBadge: {
-    backgroundColor: "#FAECE7",
+    backgroundColor: "rgba(226,75,74,0.12)",
     borderWidth: 0.5,
-    borderColor: "#F4A98A",
+    borderColor: "rgba(226,75,74,0.3)",
     borderRadius: 20,
     paddingHorizontal: 8,
     paddingVertical: 3,
   },
-  fullBadgeText: { fontSize: 11, color: "#712B13", fontWeight: "500" },
+  fullBadgeText: { fontSize: 11, color: "#E87170", fontWeight: "500" },
 
   // Stats pills row
   statsRow: {
@@ -556,30 +556,30 @@ const styles = StyleSheet.create({
   },
   statPill: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#162a1c",
     borderWidth: 0.5,
-    borderColor: "#E0E0E0",
+    borderColor: "rgba(255,255,255,0.08)",
     borderRadius: 10,
     paddingVertical: 8,
     alignItems: "center",
     gap: 2,
   },
-  statPillVal: { fontSize: 12, fontWeight: "600", color: "#1A1A1A" },
-  statPillLbl: { fontSize: 10, color: "#9A9A9A" },
+  statPillVal: { fontSize: 12, fontWeight: "600", color: "white" },
+  statPillLbl: { fontSize: 10, color: "rgba(255,255,255,0.35)" },
 
   // Card
   card: {
     marginHorizontal: 16,
     marginBottom: 12,
-    backgroundColor: "#fff",
+    backgroundColor: "#162a1c",
     borderRadius: 12,
     borderWidth: 0.5,
-    borderColor: "#E0E0E0",
+    borderColor: "rgba(255,255,255,0.08)",
     overflow: "hidden",
     paddingHorizontal: 14,
     paddingVertical: 4,
   },
-  divider: { height: 0.5, backgroundColor: "#F0F0F0", marginHorizontal: -14 },
+  divider: { height: 0.5, backgroundColor: "rgba(255,255,255,0.05)", marginHorizontal: -14 },
 
   // Info row
   infoRow: {
@@ -588,8 +588,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     gap: 10,
   },
-  infoLabel: { fontSize: 13, color: "#6A6A6A", flex: 1 },
-  infoValue: { fontSize: 13, color: "#1A1A1A", fontWeight: "500", textAlign: "right" },
+  infoLabel: { fontSize: 13, color: "rgba(255,255,255,0.4)", flex: 1 },
+  infoValue: { fontSize: 13, color: "rgba(255,255,255,0.85)", fontWeight: "500", textAlign: "right" },
   levelPill: {
     paddingHorizontal: 8,
     paddingVertical: 3,
@@ -604,13 +604,13 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     letterSpacing: 0.6,
     textTransform: "uppercase",
-    color: "#9A9A9A",
+    color: "rgba(255,255,255,0.25)",
     paddingTop: 12,
     paddingBottom: 8,
   },
   description: {
     fontSize: 14,
-    color: "#3A3A3A",
+    color: "rgba(255,255,255,0.6)",
     lineHeight: 21,
     paddingBottom: 14,
   },
@@ -631,8 +631,8 @@ const styles = StyleSheet.create({
   },
   avatarText: { fontSize: 14, fontWeight: "600" },
   creatorInfo: { flex: 1 },
-  creatorName: { fontSize: 14, fontWeight: "500", color: "#1A1A1A" },
-  creatorSub: { fontSize: 12, color: "#9A9A9A", marginTop: 2 },
+  creatorName: { fontSize: 14, fontWeight: "500", color: "white" },
+  creatorSub: { fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 2 },
 
   // Members grid
   membersGrid: {
@@ -650,14 +650,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   memberAvatarText: { fontSize: 15, fontWeight: "600" },
-  memberName: { fontSize: 11, color: "#6A6A6A", textAlign: "center" },
+  memberName: { fontSize: 11, color: "rgba(255,255,255,0.35)", textAlign: "center" },
   actorBadge: {
-    backgroundColor: GREEN_LIGHT,
+    backgroundColor: "rgba(29,158,117,0.2)",
     borderRadius: 10,
     paddingHorizontal: 5,
     paddingVertical: 1,
   },
-  actorBadgeText: { fontSize: 9, color: GREEN_MID, fontWeight: "500" },
+  actorBadgeText: { fontSize: 9, color: GREEN, fontWeight: "500" },
 
   cancelBtn: {
     marginHorizontal: 16,
@@ -665,10 +665,10 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     paddingVertical: 14,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#F4A8A8",
+    borderWidth: 0.5,
+    borderColor: "rgba(226,75,74,0.25)",
     alignItems: "center",
-    backgroundColor: "#FFF5F5",
+    backgroundColor: "rgba(226,75,74,0.07)",
   },
-  cancelBtnText: { fontSize: 14, color: "#E24B4A", fontWeight: "500" },
+  cancelBtnText: { fontSize: 14, color: "#E87170", fontWeight: "500" },
 });

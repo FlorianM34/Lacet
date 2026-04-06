@@ -12,6 +12,9 @@ export interface GroupWithUnread {
   last_message_at: string | null;
   last_message_preview: string | null;
   last_message_sender: string | null;
+  current_count: number;
+  max_participants: number;
+  participants: Array<{ id: string; name: string }>;
 }
 
 export function useUnreadCounts(userId: string | undefined) {
@@ -30,7 +33,7 @@ export function useUnreadCounts(userId: string | undefined) {
     const { data: participations } = await supabase
       .from("participation")
       .select(
-        "hike_id, role, hike:hike!hike_id(id, title, date_start, status, creator_id, creator:user!creator_id(display_name))"
+        "hike_id, role, hike:hike!hike_id(id, title, date_start, status, current_count, max_participants, creator_id, creator:user!creator_id(display_name))"
       )
       .eq("user_id", userId)
       .eq("status", "confirmed");
@@ -44,7 +47,7 @@ export function useUnreadCounts(userId: string | undefined) {
 
     const hikeIds = participations.map((p: any) => p.hike_id);
 
-    const [readStatusResult, messagesResult] = await Promise.all([
+    const [readStatusResult, messagesResult, participantsResult] = await Promise.all([
       supabase
         .from("group_read_status")
         .select("hike_id, last_read_at")
@@ -58,11 +61,25 @@ export function useUnreadCounts(userId: string | undefined) {
         .in("hike_id", hikeIds)
         .order("sent_at", { ascending: false })
         .limit(500),
+      supabase
+        .from("participation")
+        .select("hike_id, user_id, user:user!user_id(display_name)")
+        .in("hike_id", hikeIds)
+        .eq("status", "confirmed"),
     ]);
 
     const readStatusMap = new Map<string, string>(
       (readStatusResult.data ?? []).map((r: any) => [r.hike_id, r.last_read_at])
     );
+
+    const participantsMap = new Map<string, Array<{ id: string; name: string }>>();
+    for (const p of participantsResult.data ?? []) {
+      if (!participantsMap.has(p.hike_id)) participantsMap.set(p.hike_id, []);
+      const arr = participantsMap.get(p.hike_id)!;
+      if (arr.length < 4) {
+        arr.push({ id: p.user_id, name: (p.user as any)?.display_name ?? "" });
+      }
+    }
 
     const messagesByHike = new Map<string, any[]>();
     for (const msg of messagesResult.data ?? []) {
@@ -108,6 +125,9 @@ export function useUnreadCounts(userId: string | undefined) {
         last_message_at: lastMsg?.sent_at ?? null,
         last_message_preview,
         last_message_sender,
+        current_count: hike?.current_count ?? 0,
+        max_participants: hike?.max_participants ?? 0,
+        participants: participantsMap.get(p.hike_id) ?? [],
       };
     });
 

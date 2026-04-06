@@ -61,7 +61,7 @@ function renderStars(rating: number, size: number = 14) {
   const stars = [];
   for (let i = 1; i <= 5; i++) {
     stars.push(
-      <Text key={i} style={{ fontSize: size, color: i <= Math.round(rating) ? "#1D9E75" : "#9FE1CB" }}>
+      <Text key={i} style={{ fontSize: size, color: i <= Math.round(rating) ? "#1D9E75" : "rgba(255,255,255,0.12)" }}>
         ★
       </Text>
     );
@@ -137,7 +137,7 @@ export default function PublicProfileScreen() {
     navigation.setOptions({
       headerRight: () => (
         <TouchableOpacity onPress={handleReport} style={{ paddingHorizontal: 16, paddingVertical: 8 }}>
-          <Text style={{ fontSize: 22, color: "#555", fontWeight: "900", letterSpacing: 1 }}>⋮</Text>
+          <Text style={{ fontSize: 22, color: "rgba(255,255,255,0.5)", fontWeight: "900", letterSpacing: 1 }}>⋮</Text>
         </TouchableOpacity>
       ),
     });
@@ -311,17 +311,17 @@ export default function PublicProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
+  container: { flex: 1, backgroundColor: "#0f1f14" },
   contentContainer: { paddingBottom: 40 },
-  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
-  emptyText: { fontSize: 15, color: "#999" },
+  centered: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#0f1f14" },
+  emptyText: { fontSize: 15, color: "rgba(255,255,255,0.35)" },
 
   header: {
     alignItems: "center",
-    paddingVertical: 20,
+    paddingVertical: 24,
     paddingHorizontal: 16,
     borderBottomWidth: 0.5,
-    borderBottomColor: "#e0e0e0",
+    borderBottomColor: "rgba(255,255,255,0.08)",
   },
   avatarLg: {
     width: 72,
@@ -332,32 +332,45 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   avatarLgText: { fontSize: 24, fontWeight: "500" },
-  profileName: { fontSize: 18, fontWeight: "500", color: "#1a1a1a", marginBottom: 3 },
-  profileAge: { fontSize: 13, color: "#888", marginBottom: 10 },
+  profileName: { fontSize: 18, fontWeight: "500", color: "white", marginBottom: 3 },
+  profileAge: { fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 10 },
   tagsRow: { flexDirection: "row", gap: 6, flexWrap: "wrap", justifyContent: "center", marginBottom: 14 },
   tag: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20, borderWidth: 0.5 },
-  tagAmber: { backgroundColor: "#FAEEDA", borderColor: "#FAC775" },
-  tagAmberText: { fontSize: 11, color: "#633806" },
-  tagPurple: { backgroundColor: "#EEEDFE", borderColor: "#CECBF6" },
-  tagPurpleText: { fontSize: 11, color: "#3C3489" },
+  tagAmber: { backgroundColor: "rgba(239,159,39,0.12)", borderColor: "rgba(239,159,39,0.3)" },
+  tagAmberText: { fontSize: 11, color: "#EF9F27" },
+  tagPurple: { backgroundColor: "rgba(108,100,237,0.12)", borderColor: "rgba(108,100,237,0.3)" },
+  tagPurpleText: { fontSize: 11, color: "#9B96F0" },
   ratingBlock: { flexDirection: "row", alignItems: "center", gap: 6 },
   starsRow: { flexDirection: "row", gap: 2 },
-  ratingVal: { fontSize: 15, fontWeight: "500", color: "#1a1a1a" },
-  ratingCount: { fontSize: 12, color: "#999" },
+  ratingVal: { fontSize: 15, fontWeight: "500", color: "white" },
+  ratingCount: { fontSize: 12, color: "rgba(255,255,255,0.35)" },
 
-  statsGrid: { flexDirection: "row", borderBottomWidth: 0.5, borderBottomColor: "#e0e0e0" },
-  statCell: { flex: 1, paddingVertical: 14, alignItems: "center" },
-  statCellBorder: { borderLeftWidth: 0.5, borderRightWidth: 0.5, borderColor: "#e0e0e0" },
-  statVal: { fontSize: 18, fontWeight: "500", color: "#1a1a1a" },
-  statLbl: { fontSize: 11, color: "#999", marginTop: 2 },
+  statsGrid: {
+    flexDirection: "row",
+    borderBottomWidth: 0.5,
+    borderBottomColor: "rgba(255,255,255,0.08)",
+  },
+  statCell: { flex: 1, paddingVertical: 16, alignItems: "center" },
+  statCellBorder: {
+    borderLeftWidth: 0.5,
+    borderRightWidth: 0.5,
+    borderColor: "rgba(255,255,255,0.08)",
+  },
+  statVal: { fontSize: 18, fontWeight: "500", color: "white" },
+  statLbl: { fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 2 },
 
-  section: { paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 0.5, borderBottomColor: "#e0e0e0" },
+  section: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 0.5,
+    borderBottomColor: "rgba(255,255,255,0.08)",
+  },
   badgesRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
   sectionTitle: {
     fontSize: 11,
     fontWeight: "500",
     letterSpacing: 0.5,
-    color: "#999",
+    color: "rgba(255,255,255,0.25)",
     marginBottom: 10,
   },
 
@@ -365,7 +378,7 @@ const styles = StyleSheet.create({
   reviewHeader: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 },
   reviewAvatar: { width: 22, height: 22, borderRadius: 11, justifyContent: "center", alignItems: "center" },
   reviewAvatarText: { fontSize: 9, fontWeight: "500" },
-  reviewName: { fontSize: 12, fontWeight: "500", color: "#1a1a1a", flex: 1 },
+  reviewName: { fontSize: 12, fontWeight: "500", color: "rgba(255,255,255,0.85)", flex: 1 },
   reviewScore: { flexDirection: "row", gap: 2 },
-  reviewContext: { fontSize: 11, color: "#999", paddingLeft: 28 },
+  reviewContext: { fontSize: 11, color: "rgba(255,255,255,0.3)", paddingLeft: 28 },
 });

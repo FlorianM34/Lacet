@@ -56,7 +56,7 @@ function renderStars(rating: number, size: number = 14) {
   const stars = [];
   for (let i = 1; i <= 5; i++) {
     stars.push(
-      <Text key={i} style={{ fontSize: size, color: i <= Math.round(rating) ? "#1D9E75" : "#9FE1CB" }}>
+      <Text key={i} style={{ fontSize: size, color: i <= Math.round(rating) ? "#1D9E75" : "rgba(255,255,255,0.15)" }}>
         ★
       </Text>
     );
@@ -80,7 +80,7 @@ export default function ProfileScreen() {
           onPress={() => router.push("/settings")}
           style={{ paddingHorizontal: 16, paddingVertical: 8 }}
         >
-          <Ionicons name="settings-outline" size={22} color="#555" />
+          <Ionicons name="settings-outline" size={22} color="rgba(255,255,255,0.6)" />
         </TouchableOpacity>
       ),
     });
@@ -170,7 +170,7 @@ export default function ProfileScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.avatarWrap}>
-          <View style={[styles.avatarLg, { backgroundColor: avatarColor.bg, borderColor: "#9FE1CB" }]}>
+          <View style={[styles.avatarLg, { backgroundColor: avatarColor.bg, borderColor: "rgba(255,255,255,0.25)" }]}>
             <Text style={[styles.avatarLgText, { color: avatarColor.text }]}>
               {getInitials(profile.display_name)}
             </Text>
@@ -299,71 +299,76 @@ export default function ProfileScreen() {
   );
 }
 
+const BG = "#0f1f14";
+const BORDER = "rgba(255,255,255,0.1)";
+const SURFACE = "rgba(255,255,255,0.07)";
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
+  container: { flex: 1, backgroundColor: BG },
   contentContainer: { paddingBottom: 40 },
-  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
+  centered: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: BG },
 
   // Header
   header: {
     alignItems: "center",
-    paddingVertical: 20,
+    paddingVertical: 24,
     paddingHorizontal: 16,
     borderBottomWidth: 0.5,
-    borderBottomColor: "#e0e0e0",
+    borderBottomColor: BORDER,
   },
-  avatarWrap: { position: "relative", marginBottom: 12 },
+  avatarWrap: { position: "relative", marginBottom: 14 },
   avatarLg: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
   },
-  avatarLgText: { fontSize: 24, fontWeight: "500" },
+  avatarLgText: { fontSize: 26, fontWeight: "500" },
   avatarEdit: {
     position: "absolute",
     bottom: 0,
     right: 0,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: "#1D9E75",
     borderWidth: 2,
-    borderColor: "#fff",
+    borderColor: BG,
     justifyContent: "center",
     alignItems: "center",
   },
   avatarEditIcon: { fontSize: 10 },
-  profileName: { fontSize: 18, fontWeight: "500", color: "#1a1a1a", marginBottom: 3 },
-  profileAge: { fontSize: 13, color: "#888", marginBottom: 10 },
+  profileName: { fontSize: 20, fontWeight: "500", color: "white", marginBottom: 3, letterSpacing: -0.3 },
+  profileAge: { fontSize: 13, color: "rgba(255,255,255,0.45)", marginBottom: 12 },
   tagsRow: { flexDirection: "row", gap: 6, flexWrap: "wrap", justifyContent: "center", marginBottom: 14 },
-  tag: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20, borderWidth: 0.5 },
-  tagAmber: { backgroundColor: "#FAEEDA", borderColor: "#FAC775" },
-  tagAmberText: { fontSize: 11, color: "#633806" },
-  tagPurple: { backgroundColor: "#EEEDFE", borderColor: "#CECBF6" },
-  tagPurpleText: { fontSize: 11, color: "#3C3489" },
+  tag: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, borderWidth: 0.5 },
+  tagAmber: { backgroundColor: "rgba(250,199,117,0.15)", borderColor: "rgba(250,199,117,0.4)" },
+  tagAmberText: { fontSize: 11, color: "#FAC775" },
+  tagPurple: { backgroundColor: "rgba(206,203,246,0.12)", borderColor: "rgba(206,203,246,0.35)" },
+  tagPurpleText: { fontSize: 11, color: "#CECBF6" },
   ratingBlock: { flexDirection: "row", alignItems: "center", gap: 6 },
   starsRow: { flexDirection: "row", gap: 2 },
-  ratingVal: { fontSize: 15, fontWeight: "500", color: "#1a1a1a" },
-  ratingCount: { fontSize: 12, color: "#999" },
+  ratingVal: { fontSize: 15, fontWeight: "500", color: "white" },
+  ratingCount: { fontSize: 12, color: "rgba(255,255,255,0.4)" },
 
   // Stats
-  statsGrid: { flexDirection: "row", borderBottomWidth: 0.5, borderBottomColor: "#e0e0e0" },
-  statCell: { flex: 1, paddingVertical: 14, alignItems: "center" },
-  statCellBorder: { borderLeftWidth: 0.5, borderRightWidth: 0.5, borderColor: "#e0e0e0" },
-  statVal: { fontSize: 18, fontWeight: "500", color: "#1a1a1a" },
-  statLbl: { fontSize: 11, color: "#999", marginTop: 2 },
+  statsGrid: { flexDirection: "row", borderBottomWidth: 0.5, borderBottomColor: BORDER },
+  statCell: { flex: 1, paddingVertical: 16, alignItems: "center" },
+  statCellBorder: { borderLeftWidth: 0.5, borderRightWidth: 0.5, borderColor: BORDER },
+  statVal: { fontSize: 20, fontWeight: "500", color: "white" },
+  statLbl: { fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2 },
 
   // Section
-  section: { paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 0.5, borderBottomColor: "#e0e0e0" },
+  section: { paddingHorizontal: 16, paddingVertical: 16, borderBottomWidth: 0.5, borderBottomColor: BORDER },
   sectionTitle: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "500",
-    letterSpacing: 0.5,
-    color: "#999",
-    marginBottom: 10,
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+    color: "rgba(255,255,255,0.35)",
+    marginBottom: 12,
   },
 
   // Hike history
@@ -371,46 +376,47 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderBottomWidth: 0.5,
-    borderBottomColor: "#f0f0f0",
+    borderBottomColor: "rgba(255,255,255,0.06)",
   },
   hikeDot: { width: 8, height: 8, borderRadius: 4 },
   hikeDotDone: { backgroundColor: "#1D9E75" },
   hikeDotPlanned: { backgroundColor: "#FAC775" },
   hikeInfo: { flex: 1 },
-  hikeName: { fontSize: 13, fontWeight: "500", color: "#1a1a1a" },
-  hikeDate: { fontSize: 11, color: "#999", marginTop: 1 },
-  hikeBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 20 },
+  hikeName: { fontSize: 13, fontWeight: "500", color: "white" },
+  hikeDate: { fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2 },
+  hikeBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
   hikeBadgeText: { fontSize: 10 },
-  badgeDone: { backgroundColor: "#E1F5EE", color: "#085041" },
-  badgePlanned: { backgroundColor: "#FAEEDA", color: "#633806" },
-  badgeActor: { backgroundColor: "#EEEDFE", color: "#3C3489" },
+  badgeDone: { backgroundColor: "rgba(29,158,117,0.2)", color: "#9FE1CB" },
+  badgePlanned: { backgroundColor: "rgba(250,199,117,0.15)", color: "#FAC775" },
+  badgeActor: { backgroundColor: "rgba(206,203,246,0.15)", color: "#CECBF6" },
 
   // Reviews
   badgesRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
-  reviewAnon: { fontSize: 11, color: "#bbb", marginBottom: 10, fontStyle: "italic" },
+  reviewAnon: { fontSize: 11, color: "rgba(255,255,255,0.3)", marginBottom: 10, fontStyle: "italic" },
   reviewItem: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderBottomWidth: 0.5,
-    borderBottomColor: "#f0f0f0",
+    borderBottomColor: "rgba(255,255,255,0.06)",
   },
   reviewScore: { flexDirection: "row", gap: 2 },
-  reviewContext: { fontSize: 12, color: "#666", flex: 1 },
+  reviewContext: { fontSize: 12, color: "rgba(255,255,255,0.5)", flex: 1 },
 
   // Buttons
   editBtn: {
     marginHorizontal: 16,
-    marginTop: 14,
-    paddingVertical: 10,
+    marginTop: 16,
+    marginBottom: 8,
+    paddingVertical: 12,
     borderWidth: 0.5,
-    borderColor: "#ddd",
-    borderRadius: 10,
+    borderColor: BORDER,
+    borderRadius: 12,
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
+    backgroundColor: SURFACE,
   },
-  editBtnText: { fontSize: 13, fontWeight: "500", color: "#1a1a1a" },
+  editBtnText: { fontSize: 13, fontWeight: "500", color: "rgba(255,255,255,0.7)" },
 });

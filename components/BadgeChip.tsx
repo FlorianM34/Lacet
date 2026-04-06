@@ -3,21 +3,21 @@ import { BADGES } from "../lib/badges";
 
 const FAMILY_STYLES = {
   distance: {
-    bg: "#E1F5EE",
-    border: "#9FE1CB",
-    text: "#085041",
+    bg: "rgba(29,158,117,0.18)",
+    border: "rgba(29,158,117,0.45)",
+    text: "#9FE1CB",
     icon: "▲",
   },
   hikes: {
-    bg: "#FAEEDA",
-    border: "#FAC775",
-    text: "#633806",
+    bg: "rgba(250,199,117,0.15)",
+    border: "rgba(250,199,117,0.4)",
+    text: "#FAC775",
     icon: "◉",
   },
   organizer: {
-    bg: "#EEEDFE",
-    border: "#CECBF6",
-    text: "#3C3489",
+    bg: "rgba(206,203,246,0.12)",
+    border: "rgba(206,203,246,0.35)",
+    text: "#CECBF6",
     icon: "★",
   },
 };

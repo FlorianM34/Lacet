@@ -5,7 +5,7 @@ import { useUnreadContext } from "../../hooks/UnreadContext";
 type IoniconsName = React.ComponentProps<typeof Ionicons>["name"];
 
 function tabIcon(focused: boolean, icon: IoniconsName, iconOutline: IoniconsName) {
-  return <Ionicons name={focused ? icon : iconOutline} size={24} color={focused ? "#1D9E75" : "#9A9A9A"} />;
+  return <Ionicons name={focused ? icon : iconOutline} size={24} color={focused ? "#1D9E75" : "rgba(255,255,255,0.35)"} />;
 }
 
 export default function TabsLayout() {
@@ -15,8 +15,17 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: true,
+        headerStyle: { backgroundColor: "#0f1f14" },
+        headerTitleStyle: { color: "white", fontWeight: "500" },
+        headerShadowVisible: false,
         tabBarActiveTintColor: "#1D9E75",
-        tabBarInactiveTintColor: "#9A9A9A",
+        tabBarInactiveTintColor: "rgba(255,255,255,0.35)",
+        tabBarStyle: {
+          backgroundColor: "#0a1510",
+          borderTopColor: "rgba(255,255,255,0.08)",
+          borderTopWidth: 0.5,
+        },
+        tabBarLabelStyle: { fontSize: 10 },
       }}
     >
       <Tabs.Screen

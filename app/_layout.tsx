@@ -55,12 +55,21 @@ function RootNavigator() {
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false, headerBackTitle: "Retour" }}>
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        headerBackTitle: "Retour",
+        headerStyle: { backgroundColor: "#0f1f14" },
+        headerTintColor: "white",
+        headerTitleStyle: { color: "white", fontWeight: "500" },
+        headerShadowVisible: false,
+      }}
+    >
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="(auth)" />
       <Stack.Screen
         name="hike/[id]"
-        options={{ headerShown: true, title: "Détail rando" }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="chat/[hikeId]"
@@ -93,5 +102,5 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
-  loading: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#fff" },
+  loading: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#0f1f14" },
 });

@@ -208,8 +208,8 @@ export default function SettingsScreen() {
               value={notifPrefs[key]}
               onValueChange={(v) => toggleNotif(key, v)}
               disabled={notifPerms !== "granted"}
-              trackColor={{ false: "#e0e0e0", true: "#9FE1CB" }}
-              thumbColor={notifPrefs[key] ? "#1D9E75" : "#fff"}
+              trackColor={{ false: "rgba(255,255,255,0.15)", true: "rgba(29,158,117,0.6)" }}
+              thumbColor={notifPrefs[key] ? "#1D9E75" : "rgba(255,255,255,0.6)"}
               style={notifPerms !== "granted" ? { opacity: 0.4 } : undefined}
             />
           </View>
@@ -314,7 +314,7 @@ export default function SettingsScreen() {
             <TextInput
               style={styles.confirmInput}
               placeholder="SUPPRIMER"
-              placeholderTextColor="#ccc"
+              placeholderTextColor="rgba(255,255,255,0.25)"
               autoCapitalize="characters"
               value={deleteConfirmText}
               onChangeText={setDeleteConfirmText}
@@ -346,22 +346,28 @@ export default function SettingsScreen() {
   );
 }
 
+const BG = "#0f1f14";
+const SURFACE = "rgba(255,255,255,0.07)";
+const BORDER = "rgba(255,255,255,0.1)";
+const BORDER_SUBTLE = "rgba(255,255,255,0.06)";
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f5f5" },
+  container: { flex: 1, backgroundColor: BG },
   content: { paddingBottom: 48 },
 
   section: {
-    backgroundColor: "#fff",
+    backgroundColor: SURFACE,
     marginTop: 16,
     borderTopWidth: 0.5,
     borderBottomWidth: 0.5,
-    borderColor: "#e0e0e0",
+    borderColor: BORDER,
   },
   sectionLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "500",
-    letterSpacing: 0.5,
-    color: "#999",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+    color: "rgba(255,255,255,0.35)",
     paddingHorizontal: 16,
     paddingTop: 14,
     paddingBottom: 6,
@@ -374,28 +380,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderTopWidth: 0.5,
-    borderTopColor: "#f0f0f0",
+    borderTopColor: BORDER_SUBTLE,
   },
   rowLast: { borderBottomWidth: 0 },
-  rowLabel: { fontSize: 15, color: "#1a1a1a" },
+  rowLabel: { fontSize: 15, color: "white" },
   rowRight: { flexDirection: "row", alignItems: "center", gap: 4 },
-  rowValueRight: { fontSize: 14, color: "#888" },
-  rowChevron: { fontSize: 20, color: "#ccc", lineHeight: 22 },
+  rowValueRight: { fontSize: 14, color: "rgba(255,255,255,0.4)" },
+  rowChevron: { fontSize: 20, color: "rgba(255,255,255,0.25)", lineHeight: 22 },
 
   // Notifications
   notifBanner: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#FEF3C7",
+    backgroundColor: "rgba(250,199,117,0.12)",
+    borderWidth: 0.5,
+    borderColor: "rgba(250,199,117,0.3)",
     marginHorizontal: 16,
     marginBottom: 8,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
-  notifBannerText: { fontSize: 12, color: "#92400E", flex: 1, marginRight: 8 },
-  notifBannerBtn: { fontSize: 12, fontWeight: "600", color: "#92400E" },
+  notifBannerText: { fontSize: 12, color: "#FAC775", flex: 1, marginRight: 8 },
+  notifBannerBtn: { fontSize: 12, fontWeight: "600", color: "#FAC775" },
   toggleRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -403,10 +411,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderTopWidth: 0.5,
-    borderTopColor: "#f0f0f0",
+    borderTopColor: BORDER_SUBTLE,
   },
   toggleLabels: { flex: 1, marginRight: 12 },
-  toggleSubtitle: { fontSize: 12, color: "#999", marginTop: 2 },
+  toggleSubtitle: { fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 2 },
 
   // Thème
   themeRow: { flexDirection: "row", gap: 6 },
@@ -415,20 +423,20 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 20,
     borderWidth: 0.5,
-    borderColor: "#ddd",
-    backgroundColor: "#f5f5f5",
+    borderColor: BORDER,
+    backgroundColor: "rgba(255,255,255,0.05)",
   },
-  themeBtnActive: { backgroundColor: "#1D9E75", borderColor: "#1D9E75" },
-  themeBtnText: { fontSize: 13, color: "#666" },
-  themeBtnTextActive: { color: "#fff", fontWeight: "500" },
+  themeBtnActive: { backgroundColor: "rgba(29,158,117,0.25)", borderColor: "rgba(29,158,117,0.5)" },
+  themeBtnText: { fontSize: 13, color: "rgba(255,255,255,0.45)" },
+  themeBtnTextActive: { color: "#9FE1CB", fontWeight: "500" },
 
   // Danger zone
-  dangerZone: { marginTop: 24, borderTopWidth: 0.5, borderTopColor: "#e0e0e0" },
+  dangerZone: { marginTop: 24, borderTopWidth: 0.5, borderTopColor: BORDER },
   signOutBtn: {
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderTopWidth: 0.5,
-    borderTopColor: "#f0f0f0",
+    borderTopColor: BORDER_SUBTLE,
     alignItems: "center",
   },
   signOutText: { fontSize: 15, color: "#1D9E75", fontWeight: "500" },
@@ -436,31 +444,32 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderTopWidth: 0.5,
-    borderTopColor: "#f0f0f0",
+    borderTopColor: BORDER_SUBTLE,
     alignItems: "center",
   },
   deleteText: { fontSize: 15, color: "#E53E3E", fontWeight: "500" },
 
   // Delete modal
-  modalOverlay: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.4)" },
+  modalOverlay: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.6)" },
   modalSheet: {
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    backgroundColor: "#132219",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 40,
   },
-  modalTitle: { fontSize: 18, fontWeight: "600", color: "#1a1a1a", marginBottom: 8 },
-  modalSubtitle: { fontSize: 14, color: "#666", lineHeight: 20, marginBottom: 20 },
+  modalTitle: { fontSize: 18, fontWeight: "600", color: "white", marginBottom: 8 },
+  modalSubtitle: { fontSize: 14, color: "rgba(255,255,255,0.55)", lineHeight: 20, marginBottom: 20 },
   confirmInput: {
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
+    backgroundColor: SURFACE,
+    borderWidth: 0.5,
+    borderColor: BORDER,
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
-    color: "#1a1a1a",
+    color: "white",
     marginBottom: 16,
     letterSpacing: 1,
   },
@@ -474,5 +483,5 @@ const styles = StyleSheet.create({
   confirmBtnDisabled: { opacity: 0.35 },
   confirmBtnText: { fontSize: 15, fontWeight: "600", color: "#fff" },
   cancelBtn: { alignItems: "center", paddingVertical: 10 },
-  cancelText: { fontSize: 14, color: "#888" },
+  cancelText: { fontSize: 14, color: "rgba(255,255,255,0.4)" },
 });

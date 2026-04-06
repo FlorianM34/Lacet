@@ -93,32 +93,32 @@ const styles = StyleSheet.create({
   // Bubble
   bubble: { maxWidth: 220, paddingHorizontal: 11, paddingVertical: 8, borderRadius: 16 },
   bubbleTheirs: {
-    backgroundColor: "#f0f0f0",
+    backgroundColor: "#1a2f20",
     borderWidth: 0.5,
-    borderColor: "#e0e0e0",
+    borderColor: "rgba(255,255,255,0.08)",
     borderBottomLeftRadius: 4,
   },
   bubbleMine: {
     backgroundColor: "#1D9E75",
     borderBottomRightRadius: 4,
   },
-  bubbleText: { fontSize: 13, lineHeight: 18, color: "#1a1a1a" },
+  bubbleText: { fontSize: 13, lineHeight: 18, color: "rgba(255,255,255,0.9)" },
   bubbleTextMine: { color: "#fff" },
 
   // Meta
-  meta: { fontSize: 10, color: "#999", marginTop: 2, paddingHorizontal: 4 },
+  meta: { fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 2, paddingHorizontal: 4 },
   metaMine: { textAlign: "right" },
 
   // System message
   systemRow: { alignItems: "center", marginVertical: 4 },
   systemPill: {
-    backgroundColor: "#f0f0f0",
+    backgroundColor: "rgba(255,255,255,0.07)",
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 4,
     maxWidth: 220,
   },
-  systemText: { fontSize: 11, color: "#999", textAlign: "center" },
+  systemText: { fontSize: 11, color: "rgba(255,255,255,0.35)", textAlign: "center" },
 
   // RDV pill
   rdvRow: { alignItems: "center", marginVertical: 6 },
@@ -126,9 +126,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "#E1F5EE",
+    backgroundColor: "rgba(29,158,117,0.15)",
     borderWidth: 0.5,
-    borderColor: "#9FE1CB",
+    borderColor: "rgba(29,158,117,0.4)",
     borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 10,
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
   },
   rdvPillIcon: { fontSize: 18 },
   rdvPillBody: { flexShrink: 1 },
-  rdvPillLocation: { fontSize: 13, fontWeight: "600", color: "#085041" },
-  rdvPillDatetime: { fontSize: 11, color: "#0F6E56", marginTop: 2 },
-  rdvMeta: { fontSize: 10, color: "#999", marginTop: 4 },
+  rdvPillLocation: { fontSize: 13, fontWeight: "600", color: "white" },
+  rdvPillDatetime: { fontSize: 11, color: "rgba(255,255,255,0.6)", marginTop: 2 },
+  rdvMeta: { fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 4 },
 });
