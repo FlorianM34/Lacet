@@ -1,0 +1,36 @@
+<svg width="100%" viewBox="0 0 680 220" role="img" xmlns="http://www.w3.org/2000/svg">
+  <title style="fill:rgb(0, 0, 0);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">Logo Lacet en cursive verte</title>
+  <desc style="fill:rgb(0, 0, 0);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">Le mot Lacet dessiné en écriture attachée SVG couleur verte</desc>
+
+  <!-- L -->
+  <path d="M 100 80 C 95 82, 88 100, 90 160 C 91 175, 95 185, 105 188 C 118 191, 135 187, 148 183" fill="none" stroke="#4B9C78" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="fill:none;stroke:rgb(75, 156, 120);color:rgb(255, 255, 255);stroke-width:3.5px;stroke-linecap:round;stroke-linejoin:round;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- liaison L -> a -->
+  <path d="M 148 183 C 158 180, 162 165, 165 155" fill="none" stroke="#4B9C78" stroke-width="3.5" stroke-linecap="round" style="fill:none;stroke:rgb(75, 156, 120);color:rgb(255, 255, 255);stroke-width:3.5px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- a -->
+  <path d="M 165 155 C 168 138, 185 128, 200 132 C 218 137, 222 158, 215 172 C 208 186, 193 190, 182 186 C 170 182, 165 172, 168 162" fill="none" stroke="#4B9C78" stroke-width="3.5" stroke-linecap="round" style="fill:none;stroke:rgb(75, 156, 120);color:rgb(255, 255, 255);stroke-width:3.5px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <path d="M 215 140 C 218 155, 220 172, 222 190" fill="none" stroke="#4B9C78" stroke-width="3.5" stroke-linecap="round" style="fill:none;stroke:rgb(75, 156, 120);color:rgb(255, 255, 255);stroke-width:3.5px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- liaison a -> c -->
+  <path d="M 222 190 C 232 186, 238 175, 242 165" fill="none" stroke="#4B9C78" stroke-width="3.5" stroke-linecap="round" style="fill:none;stroke:rgb(75, 156, 120);color:rgb(255, 255, 255);stroke-width:3.5px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- c -->
+  <path d="M 268 132 C 252 126, 236 138, 234 155 C 232 172, 242 188, 258 191 C 270 193, 282 187, 288 178" fill="none" stroke="#4B9C78" stroke-width="3.5" stroke-linecap="round" style="fill:none;stroke:rgb(75, 156, 120);color:rgb(255, 255, 255);stroke-width:3.5px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- liaison c -> e -->
+  <path d="M 288 178 C 298 172, 305 162, 308 155" fill="none" stroke="#4B9C78" stroke-width="3.5" stroke-linecap="round" style="fill:none;stroke:rgb(75, 156, 120);color:rgb(255, 255, 255);stroke-width:3.5px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- e -->
+  <path d="M 308 155 C 310 138, 328 128, 344 133 C 358 138, 362 155, 355 155 C 340 155, 316 155, 308 158 C 304 165, 308 178, 320 185 C 334 192, 352 188, 362 180" fill="none" stroke="#4B9C78" stroke-width="3.5" stroke-linecap="round" style="fill:none;stroke:rgb(75, 156, 120);color:rgb(255, 255, 255);stroke-width:3.5px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- liaison e -> t -->
+  <path d="M 362 180 C 372 174, 378 162, 380 152" fill="none" stroke="#4B9C78" stroke-width="3.5" stroke-linecap="round" style="fill:none;stroke:rgb(75, 156, 120);color:rgb(255, 255, 255);stroke-width:3.5px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- t : montant vertical -->
+  <path d="M 385 95 C 384 120, 382 155, 380 175 C 378 188, 382 195, 390 196 C 400 197, 410 190, 415 182" fill="none" stroke="#4B9C78" stroke-width="3.5" stroke-linecap="round" style="fill:none;stroke:rgb(75, 156, 120);color:rgb(255, 255, 255);stroke-width:3.5px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- t : barre horizontale -->
+  <path d="M 365 148 C 375 146, 390 145, 405 147" fill="none" stroke="#4B9C78" stroke-width="3.5" stroke-linecap="round" style="fill:none;stroke:rgb(75, 156, 120);color:rgb(255, 255, 255);stroke-width:3.5px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+</svg>

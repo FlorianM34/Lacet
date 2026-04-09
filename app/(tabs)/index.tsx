@@ -14,6 +14,7 @@ import { router } from "expo-router";
 import { supabase } from "../../lib/supabase";
 import { useSessionContext } from "../../hooks/SessionContext";
 import HikeCard from "../../components/HikeCard";
+import LacetLogo from "../../components/LacetLogo";
 import FilterModal from "../../components/FilterModal";
 import MatchOverlay from "../../components/MatchOverlay";
 import PendingMatchScreen from "../../components/PendingMatchScreen";
@@ -327,7 +328,7 @@ export default function ExploreScreen() {
 
         {/* Top overlay: logo + filter pill */}
         <View style={[styles.topOverlay, { top: insets.top }]} pointerEvents="box-none">
-          <Text style={styles.logo}>lacet</Text>
+          <LacetLogo width={90} color="white" />
           <TouchableOpacity style={styles.filterPill} onPress={() => setShowFilters(true)}>
             <View style={styles.filterIcon}>
               <View style={styles.filterLine} />
@@ -416,12 +417,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     zIndex: 10,
     pointerEvents: "box-none",
-  },
-  logo: {
-    fontSize: 18,
-    fontWeight: "500",
-    color: "white",
-    letterSpacing: -0.3,
   },
   filterPill: {
     flexDirection: "row",
