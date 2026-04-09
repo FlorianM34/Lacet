@@ -7,7 +7,10 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Alert,
+  Dimensions,
 } from "react-native";
+
+const MAP_HEIGHT = Dimensions.get("window").height * 0.45;
 import { useLocalSearchParams, router } from "expo-router";
 import Mapbox, { MapView, Camera, MarkerView, ShapeSource, LineLayer } from "@rnmapbox/maps";
 import { Ionicons } from "@expo/vector-icons";
@@ -174,10 +177,10 @@ export default function HikeDetailScreen() {
     return {
       ne: [Math.max(...lngs), Math.max(...lats)] as [number, number],
       sw: [Math.min(...lngs), Math.min(...lats)] as [number, number],
-      paddingTop: 40,
-      paddingBottom: 40,
-      paddingLeft: 24,
-      paddingRight: 24,
+      paddingTop: 70,
+      paddingBottom: 60,
+      paddingLeft: 32,
+      paddingRight: 32,
     };
   })() : null;
 
@@ -493,7 +496,7 @@ const styles = StyleSheet.create({
   errorText: { fontSize: 15, color: "rgba(255,255,255,0.35)" },
 
   // Map
-  mapContainer: { height: 240, backgroundColor: "#0a1a10" },
+  mapContainer: { height: MAP_HEIGHT, backgroundColor: "#0a1a10" },
   map: { flex: 1 },
   backBtn: {
     position: "absolute",

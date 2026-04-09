@@ -111,6 +111,7 @@ export default function VerifyScreen() {
           value={code}
           onChangeText={(text) => setCode(text.replace(/[^0-9]/g, "").slice(0, 6))}
           placeholder="000000"
+          placeholderTextColor="rgba(255,255,255,0.2)"
           keyboardType="number-pad"
           maxLength={6}
           autoFocus
@@ -147,36 +148,38 @@ export default function VerifyScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
+  container: { flex: 1, backgroundColor: "#0f1f14" },
   content: { flex: 1, justifyContent: "center", paddingHorizontal: 32 },
-  title: { fontSize: 28, fontWeight: "bold", textAlign: "center", color: "#2E7D32" },
+  title: { fontSize: 28, fontWeight: "700", textAlign: "center", color: "white" },
   subtitle: {
     fontSize: 15,
-    color: "#666",
+    color: "rgba(255,255,255,0.45)",
     textAlign: "center",
     marginTop: 12,
     marginBottom: 32,
     lineHeight: 22,
   },
   input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
+    backgroundColor: "#162a1c",
+    borderWidth: 0.5,
+    borderColor: "rgba(255,255,255,0.12)",
     borderRadius: 12,
     padding: 16,
     fontSize: 24,
     letterSpacing: 8,
     textAlign: "center",
+    color: "white",
   },
   button: {
-    backgroundColor: "#2E7D32",
+    backgroundColor: "#1D9E75",
     paddingVertical: 16,
     borderRadius: 12,
     marginTop: 20,
     alignItems: "center",
   },
-  buttonDisabled: { opacity: 0.6 },
+  buttonDisabled: { opacity: 0.55 },
   buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
   resendContainer: { marginTop: 24, alignItems: "center" },
-  resendText: { fontSize: 14, color: "#2E7D32", fontWeight: "500" },
-  resendDisabled: { color: "#999" },
+  resendText: { fontSize: 14, color: "#1D9E75", fontWeight: "500" },
+  resendDisabled: { color: "rgba(255,255,255,0.2)" },
 });

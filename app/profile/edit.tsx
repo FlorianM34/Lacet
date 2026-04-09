@@ -127,16 +127,18 @@ export default function EditProfileScreen() {
         <TouchableOpacity
           style={[styles.avatarLg, { backgroundColor: avatarColor.bg }]}
           onPress={pickPhoto}
+          activeOpacity={0.8}
         >
           <Text style={[styles.avatarLgText, { color: avatarColor.text }]}>
             {getInitials(displayName || profile.display_name)}
           </Text>
+          <View style={styles.avatarEditBadge}>
+            <Text style={styles.avatarEditBadgeIcon}>✏️</Text>
+          </View>
         </TouchableOpacity>
-        <TouchableOpacity onPress={pickPhoto}>
-          <Text style={styles.changePhotoText}>
-            {photoUri ? "Photo sélectionnée" : "Changer la photo"}
-          </Text>
-        </TouchableOpacity>
+        <Text style={styles.changePhotoText}>
+          {photoUri ? "Photo sélectionnée ✓" : "Changer la photo"}
+        </Text>
       </View>
 
       {/* Prénom */}
@@ -146,6 +148,7 @@ export default function EditProfileScreen() {
         value={displayName}
         onChangeText={setDisplayName}
         placeholder="Thomas C."
+        placeholderTextColor="rgba(255,255,255,0.25)"
         autoCapitalize="words"
       />
 
@@ -171,18 +174,10 @@ export default function EditProfileScreen() {
         {LANGUAGES.map((lang) => (
           <TouchableOpacity
             key={lang.code}
-            style={[
-              styles.chip,
-              selectedLanguages.includes(lang.code) && styles.chipActive,
-            ]}
+            style={[styles.chip, selectedLanguages.includes(lang.code) && styles.chipActive]}
             onPress={() => toggleLanguage(lang.code)}
           >
-            <Text
-              style={[
-                styles.chipText,
-                selectedLanguages.includes(lang.code) && styles.chipTextActive,
-              ]}
-            >
+            <Text style={[styles.chipText, selectedLanguages.includes(lang.code) && styles.chipTextActive]}>
               {lang.label}
             </Text>
           </TouchableOpacity>
@@ -194,6 +189,7 @@ export default function EditProfileScreen() {
         style={[styles.saveBtn, loading && styles.saveBtnDisabled]}
         onPress={handleSave}
         disabled={loading}
+        activeOpacity={0.8}
       >
         {loading ? (
           <ActivityIndicator color="#fff" />
@@ -210,11 +206,15 @@ export default function EditProfileScreen() {
   );
 }
 
+const BG = "#0f1f14";
+const SURFACE = "rgba(255,255,255,0.07)";
+const BORDER = "rgba(255,255,255,0.1)";
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
+  container: { flex: 1, backgroundColor: BG },
   contentContainer: { padding: 20, paddingBottom: 40 },
 
-  avatarSection: { alignItems: "center", marginBottom: 20 },
+  avatarSection: { alignItems: "center", marginBottom: 24 },
   avatarLg: {
     width: 80,
     height: 80,
@@ -222,44 +222,70 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 8,
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.2)",
   },
   avatarLgText: { fontSize: 28, fontWeight: "500" },
+  avatarEditBadge: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: "#1D9E75",
+    borderWidth: 2,
+    borderColor: BG,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  avatarEditBadgeIcon: { fontSize: 11 },
   changePhotoText: { fontSize: 13, color: "#1D9E75", fontWeight: "500" },
 
-  label: { fontSize: 13, fontWeight: "600", color: "#333", marginTop: 18, marginBottom: 6 },
+  label: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "rgba(255,255,255,0.4)",
+    marginTop: 20,
+    marginBottom: 8,
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+  },
   input: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 10,
-    padding: 12,
+    backgroundColor: SURFACE,
+    borderWidth: 0.5,
+    borderColor: BORDER,
+    borderRadius: 12,
+    padding: 14,
     fontSize: 15,
-    color: "#1a1a1a",
+    color: "#fff",
   },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#ddd",
+    borderWidth: 0.5,
+    borderColor: BORDER,
+    backgroundColor: SURFACE,
   },
-  chipActive: { backgroundColor: "#1D9E75", borderColor: "#1D9E75" },
-  chipText: { fontSize: 13, color: "#333" },
-  chipTextActive: { color: "#fff" },
+  chipActive: { backgroundColor: "rgba(29,158,117,0.25)", borderColor: "#1D9E75" },
+  chipText: { fontSize: 13, color: "rgba(255,255,255,0.55)" },
+  chipTextActive: { color: "#9FE1CB", fontWeight: "500" },
 
   saveBtn: {
     backgroundColor: "#1D9E75",
     paddingVertical: 14,
-    borderRadius: 10,
-    marginTop: 28,
+    borderRadius: 12,
+    marginTop: 32,
     alignItems: "center",
   },
-  saveBtnDisabled: { opacity: 0.6 },
+  saveBtnDisabled: { opacity: 0.5 },
   saveBtnText: { color: "#fff", fontSize: 15, fontWeight: "600" },
   cancelBtn: {
     paddingVertical: 12,
-    marginTop: 10,
+    marginTop: 8,
     alignItems: "center",
   },
-  cancelBtnText: { color: "#999", fontSize: 14 },
+  cancelBtnText: { color: "rgba(255,255,255,0.35)", fontSize: 14 },
 });

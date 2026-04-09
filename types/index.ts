@@ -6,7 +6,7 @@ export type HikeStatus = "draft" | "open" | "full" | "completed" | "cancelled";
 
 export type ParticipationRole = "actor" | "volunteer";
 
-export type ParticipationStatus = "confirmed" | "left" | "cancelled";
+export type ParticipationStatus = "confirmed" | "pending" | "left" | "cancelled";
 
 export type RatingContext = "completed" | "left_early";
 
@@ -55,6 +55,7 @@ export interface Hike {
   date_start: string; // ISO date
   date_flexible: boolean;
   has_vehicle: boolean;
+  auto_accept: boolean;
   max_participants: number;
   current_count: number;
   status: HikeStatus;

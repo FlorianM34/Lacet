@@ -1,6 +1,7 @@
 import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from "react";
 import {
   View,
+  Animated,
   Text,
   TextInput,
   TouchableOpacity,
@@ -9,18 +10,22 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
+  Keyboard,
   Modal,
   Platform,
   AppState,
 } from "react-native";
 import { Calendar } from "react-native-calendars";
+import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, router, useNavigation } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { supabase, markAsRead } from "../../lib/supabase";
 import { useSessionContext } from "../../hooks/SessionContext";
 import { useUnreadContext } from "../../hooks/UnreadContext";
 import MessageBubble from "../../components/MessageBubble";
 import RdvModal from "../../components/RdvModal";
 import RatingModal from "../../components/RatingModal";
+import PendingRequestsPanel from "../../components/PendingRequestsPanel";
 import {
   getAvatarColor,
   getInitials,
@@ -50,6 +55,7 @@ interface Member {
 export default function ChatScreen() {
   const { hikeId } = useLocalSearchParams<{ hikeId: string }>();
   const { session } = useSessionContext();
+  const { bottom: bottomInset } = useSafeAreaInsets();
   const userId = session?.user?.id;
   const { refetch: refetchUnread } = useUnreadContext();
   const navigation = useNavigation();
@@ -65,19 +71,54 @@ export default function ChatScreen() {
   const [showPlusMenu, setShowPlusMenu] = useState(false);
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [hasRated, setHasRated] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [showPendingPanel, setShowPendingPanel] = useState(false);
 
   const flatListRef = useRef<FlatList>(null);
   const membersMapRef = useRef<Map<string, string>>(new Map());
 
   useLayoutEffect(() => {
+    const isCurrentUserActor = creatorId === userId;
     navigation.setOptions({
       title: hike?.title ?? "",
       headerStyle: { backgroundColor: "#0f1f14" },
       headerTintColor: "white",
       headerTitleStyle: { color: "white", fontSize: 16, fontWeight: "500" },
       headerShadowVisible: false,
+      headerRight: isCurrentUserActor
+        ? () => (
+            <TouchableOpacity
+              onPress={() => setShowPendingPanel(true)}
+              style={{ paddingHorizontal: 16, paddingVertical: 8 }}
+            >
+              <View style={{ position: "relative" }}>
+                <Ionicons name="people-outline" size={22} color="rgba(255,255,255,0.7)" />
+                {pendingCount > 0 && (
+                  <View
+                    style={{
+                      position: "absolute",
+                      top: -4,
+                      right: -4,
+                      minWidth: 16,
+                      height: 16,
+                      borderRadius: 8,
+                      backgroundColor: "#E24B4A",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      paddingHorizontal: 3,
+                    }}
+                  >
+                    <Text style={{ fontSize: 9, color: "white", fontWeight: "700" }}>
+                      {pendingCount}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </TouchableOpacity>
+          )
+        : undefined,
     });
-  }, [hike?.title, navigation]);
+  }, [hike?.title, navigation, creatorId, userId, pendingCount]);
 
   // ── Load hike info ──
   useEffect(() => {
@@ -95,6 +136,40 @@ export default function ChatScreen() {
       }
     })();
   }, [hikeId]);
+
+  // ── Pending requests count (for actor bell) ──
+  useEffect(() => {
+    if (!hikeId || creatorId !== userId) return;
+
+    const fetchPendingCount = async () => {
+      const { count } = await supabase
+        .from("participation")
+        .select("id", { count: "exact", head: true })
+        .eq("hike_id", hikeId)
+        .eq("status", "pending");
+      setPendingCount(count ?? 0);
+    };
+
+    fetchPendingCount();
+
+    const channel = supabase
+      .channel(`pending-requests:${hikeId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "participation",
+          filter: `hike_id=eq.${hikeId}`,
+        },
+        () => fetchPendingCount()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [hikeId, creatorId, userId]);
 
   // ── Check if user has already rated ──
   useEffect(() => {
@@ -335,7 +410,17 @@ export default function ChatScreen() {
     !hasRatingBotMessage &&
     ratableMembers.length > 0;
 
-  const handlePlusMenu = () => setShowPlusMenu((v) => !v);
+  const sheetAnim = useRef(new Animated.Value(300)).current;
+
+  const handlePlusMenu = () => {
+    Keyboard.dismiss();
+    if (showPlusMenu) {
+      Animated.timing(sheetAnim, { toValue: 300, duration: 220, useNativeDriver: true }).start(() => setShowPlusMenu(false));
+    } else {
+      setShowPlusMenu(true);
+      Animated.spring(sheetAnim, { toValue: 0, useNativeDriver: true, bounciness: 0 }).start();
+    }
+  };
 
   const handleConfirmDate = async (dateStr: string) => {
     setShowSetDate(false);
@@ -617,41 +702,48 @@ export default function ChatScreen() {
         ) : null}
       />
 
-      {/* Plus menu bubble */}
-      {showPlusMenu && (
-        <>
+      {/* Plus menu modal */}
+      <Modal
+        visible={showPlusMenu}
+        transparent
+        animationType="fade"
+        onRequestClose={handlePlusMenu}
+      >
+        <TouchableOpacity
+          style={styles.plusModalBackdrop}
+          activeOpacity={1}
+          onPress={handlePlusMenu}
+        />
+        <Animated.View style={[styles.plusModalSheet, { paddingBottom: bottomInset + 8, transform: [{ translateY: sheetAnim }] }]}>
+          <View style={styles.plusModalHandle} />
+          <Text style={styles.plusModalTitle}>Ajouter à la randonnée</Text>
           <TouchableOpacity
-            style={StyleSheet.absoluteFillObject}
-            activeOpacity={1}
-            onPress={() => setShowPlusMenu(false)}
-          />
-          <View style={styles.plusMenu}>
+            style={styles.plusModalItem}
+            onPress={() => { Animated.timing(sheetAnim, { toValue: 300, duration: 220, useNativeDriver: true }).start(() => { setShowPlusMenu(false); setShowRdv(true); }); }}
+          >
+            <Text style={styles.plusModalEmoji}>📍</Text>
+            <View>
+              <Text style={styles.plusModalLabel}>Point de RDV</Text>
+              <Text style={styles.plusModalSub}>Partager le lieu de départ</Text>
+            </View>
+          </TouchableOpacity>
+          {hike?.date_flexible && (
             <TouchableOpacity
-              style={styles.plusMenuItem}
-              onPress={() => { setShowPlusMenu(false); setShowRdv(true); }}
+              style={styles.plusModalItem}
+              onPress={() => { Animated.timing(sheetAnim, { toValue: 300, duration: 220, useNativeDriver: true }).start(() => { setShowPlusMenu(false); setShowSetDate(true); }); }}
             >
-              <Text style={styles.plusMenuEmoji}>📍</Text>
-              <Text style={styles.plusMenuLabel}>Point de RDV</Text>
+              <Text style={styles.plusModalEmoji}>📅</Text>
+              <View>
+                <Text style={styles.plusModalLabel}>Fixer la date</Text>
+                <Text style={styles.plusModalSub}>Définir la date de la rando</Text>
+              </View>
             </TouchableOpacity>
-            {hike?.date_flexible && (
-              <>
-                <View style={styles.plusMenuDivider} />
-                <TouchableOpacity
-                  style={styles.plusMenuItem}
-                  onPress={() => { setShowPlusMenu(false); setShowSetDate(true); }}
-                >
-                  <Text style={styles.plusMenuEmoji}>📅</Text>
-                  <Text style={styles.plusMenuLabel}>Fixer la date</Text>
-                </TouchableOpacity>
-              </>
-            )}
-            <View style={styles.plusMenuArrow} />
-          </View>
-        </>
-      )}
+          )}
+        </Animated.View>
+      </Modal>
 
       {/* Input bar */}
-      <View style={styles.inputBar}>
+      <View style={[styles.inputBar, { paddingBottom: 10 + bottomInset }]}>
         {isActor && (
           <TouchableOpacity
             style={[styles.attachBtn, showPlusMenu && styles.attachBtnActive]}
@@ -730,6 +822,22 @@ export default function ChatScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Pending requests panel */}
+      {hike && (
+        <PendingRequestsPanel
+          hikeId={hikeId!}
+          hikeTitle={hike.title}
+          maxParticipants={hike.max_participants}
+          currentCount={hike.current_count}
+          visible={showPendingPanel}
+          onClose={() => setShowPendingPanel(false)}
+          onCountChange={(newCount) => {
+            setHike((h) => h ? { ...h, current_count: newCount } : h);
+            setPendingCount((prev) => Math.max(0, prev - 1));
+          }}
+        />
+      )}
     </KeyboardAvoidingView>
   );
 }
@@ -918,47 +1026,45 @@ const styles = StyleSheet.create({
   attachIcon: { fontSize: 20, color: "rgba(255,255,255,0.45)", fontWeight: "300", lineHeight: 24 },
   attachIconActive: { color: "#fff" },
 
-  // Plus menu bubble
-  plusMenu: {
-    position: "absolute",
-    bottom: 62,
-    left: 14,
-    backgroundColor: "#162a1c",
-    borderRadius: 14,
-    paddingVertical: 4,
-    minWidth: 180,
-    borderWidth: 0.5,
-    borderColor: "rgba(255,255,255,0.1)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
-    zIndex: 10,
+  // Plus menu modal
+  plusModalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
   },
-  plusMenuItem: {
+  plusModalSheet: {
+    backgroundColor: "#162a1c",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: 12,
+    paddingHorizontal: 20,
+  },
+  plusModalHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    alignSelf: "center",
+    marginBottom: 16,
+  },
+  plusModalTitle: {
+    fontSize: 13,
+    color: "rgba(255,255,255,0.4)",
+    fontWeight: "500",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  plusModalItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 11,
+    gap: 14,
+    paddingVertical: 14,
+    borderTopWidth: 0.5,
+    borderTopColor: "rgba(255,255,255,0.08)",
   },
-  plusMenuEmoji: { fontSize: 16 },
-  plusMenuLabel: { fontSize: 14, color: "rgba(255,255,255,0.8)", fontWeight: "400" },
-  plusMenuDivider: { height: 0.5, backgroundColor: "rgba(255,255,255,0.08)", marginHorizontal: 14 },
-  plusMenuArrow: {
-    position: "absolute",
-    bottom: -5,
-    left: 14,
-    width: 10,
-    height: 10,
-    backgroundColor: "#162a1c",
-    transform: [{ rotate: "45deg" }],
-    shadowColor: "#000",
-    shadowOffset: { width: 2, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 2,
-  },
+  plusModalEmoji: { fontSize: 24 },
+  plusModalLabel: { fontSize: 15, color: "#fff", fontWeight: "500" },
+  plusModalSub: { fontSize: 12, color: "rgba(255,255,255,0.45)", marginTop: 1 },
   msgInput: {
     flex: 1,
     backgroundColor: "#162a1c",

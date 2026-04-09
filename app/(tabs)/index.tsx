@@ -16,6 +16,7 @@ import { useSessionContext } from "../../hooks/SessionContext";
 import HikeCard from "../../components/HikeCard";
 import FilterModal from "../../components/FilterModal";
 import MatchOverlay from "../../components/MatchOverlay";
+import PendingMatchScreen from "../../components/PendingMatchScreen";
 import type { HikeWithCreator, FeedFilters, HikeLevel } from "../../types";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
@@ -47,6 +48,8 @@ export default function ExploreScreen() {
   });
   const [showFilters, setShowFilters] = useState(false);
   const [matchHike, setMatchHike] = useState<HikeWithCreator | null>(null);
+  const [pendingHike, setPendingHike] = useState<HikeWithCreator | null>(null);
+  const [pendingHikeIds, setPendingHikeIds] = useState<Set<string>>(new Set());
 
   // ── Get location ──
   useEffect(() => {
@@ -103,6 +106,14 @@ export default function ExploreScreen() {
 
       setHikes(enriched);
       setCurrentIndex(0);
+
+      // Load pending participation IDs for this user
+      const { data: pendingData } = await supabase
+        .from("participation")
+        .select("hike_id")
+        .eq("user_id", userId)
+        .eq("status", "pending");
+      setPendingHikeIds(new Set((pendingData ?? []).map((p: any) => p.hike_id)));
     } catch (error: any) {
       try {
         let query = supabase
@@ -148,12 +159,34 @@ export default function ExploreScreen() {
     const hike = hikes[currentIndex];
     if (!hike || !userId) return;
 
+    // If already pending, don't allow action
+    if (pendingHikeIds.has(hike.id)) return;
+
     try {
+      // Check for existing active participation
+      const { data: existing } = await supabase
+        .from("participation")
+        .select("id, status")
+        .eq("user_id", userId)
+        .eq("hike_id", hike.id)
+        .in("status", ["confirmed", "pending"])
+        .maybeSingle();
+
+      if (existing) {
+        if (existing.status === "pending") {
+          setPendingHikeIds((prev) => new Set([...prev, hike.id]));
+          setPendingHike(hike);
+        }
+        setCurrentIndex((prev) => prev + 1);
+        return;
+      }
+
+      // Check 3-rando limit (counts both confirmed and pending)
       const { count } = await supabase
         .from("participation")
         .select("id", { count: "exact", head: true })
         .eq("user_id", userId)
-        .eq("status", "confirmed")
+        .in("status", ["confirmed", "pending"])
         .eq("role", "volunteer");
 
       if ((count ?? 0) >= 3) {
@@ -164,11 +197,20 @@ export default function ExploreScreen() {
         return;
       }
 
+      // Fetch hike auto_accept setting
+      const { data: hikeData } = await supabase
+        .from("hike")
+        .select("auto_accept")
+        .eq("id", hike.id)
+        .single();
+
+      const autoAccept = hikeData?.auto_accept !== false;
+
       const { error } = await supabase.from("participation").insert({
         user_id: userId,
         hike_id: hike.id,
         role: "volunteer",
-        status: "confirmed",
+        status: autoAccept ? "confirmed" : "pending",
       });
 
       if (error) {
@@ -180,13 +222,33 @@ export default function ExploreScreen() {
         return;
       }
 
-      setMatchHike(hike);
+      if (autoAccept) {
+        setMatchHike(hike);
+      } else {
+        setPendingHikeIds((prev) => new Set([...prev, hike.id]));
+        setPendingHike(hike);
+
+        // Notify organizer
+        try {
+          await fetch(
+            `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/notify-pending-request`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
+              },
+              body: JSON.stringify({ hike_id: hike.id, requester_id: userId }),
+            }
+          );
+        } catch {}
+      }
     } catch (error: any) {
       Alert.alert("Erreur", error?.message ?? "Impossible de rejoindre la rando.");
     }
 
     setCurrentIndex((prev) => prev + 1);
-  }, [hikes, currentIndex, userId]);
+  }, [hikes, currentIndex, userId, pendingHikeIds]);
 
   const handleDetailButton = () => {
     if (currentIndex >= hikes.length) return;
@@ -204,8 +266,13 @@ export default function ExploreScreen() {
     setMatchHike(null);
   };
 
+  const handlePendingContinue = () => {
+    setPendingHike(null);
+  };
+
   const filterPillLabel = `${filters.radiusKm} km · ${filters.level ? levelLabel(filters.level) : "Tous niveaux"}`;
   const hasCards = currentIndex < hikes.length;
+  const currentIsPending = hasCards && pendingHikeIds.has(hikes[currentIndex]?.id);
 
   if (loading) {
     return (
@@ -239,6 +306,7 @@ export default function ExploreScreen() {
               onSwipeLeft={handleSwipeLeft}
               onSwipeRight={handleSwipeRight}
               isTop={true}
+              isPending={currentIsPending}
             />
           </>
         ) : (
@@ -276,9 +344,15 @@ export default function ExploreScreen() {
             <TouchableOpacity style={styles.btnPass} onPress={handleSwipeLeft} activeOpacity={0.7}>
               <Text style={styles.btnPassIcon}>✕</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.btnJoin} onPress={handleSwipeRight} activeOpacity={0.8}>
-              <Text style={styles.btnJoinIcon}>✓</Text>
-            </TouchableOpacity>
+            {currentIsPending ? (
+              <View style={styles.btnPending}>
+                <Text style={styles.btnPendingText}>En attente…</Text>
+              </View>
+            ) : (
+              <TouchableOpacity style={styles.btnJoin} onPress={handleSwipeRight} activeOpacity={0.8}>
+                <Text style={styles.btnJoinIcon}>✓</Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity style={styles.btnInfo} onPress={handleDetailButton} activeOpacity={0.7}>
               <Text style={styles.btnInfoIcon}>i</Text>
             </TouchableOpacity>
@@ -302,6 +376,14 @@ export default function ExploreScreen() {
         onViewGroup={handleMatchClose}
         onContinue={handleMatchContinue}
       />
+
+      {pendingHike && (
+        <PendingMatchScreen
+          visible={pendingHike !== null}
+          hike={pendingHike}
+          onContinue={handlePendingContinue}
+        />
+      )}
     </View>
   );
 }
@@ -389,6 +471,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   btnJoinIcon: { fontSize: 26, color: "white", fontWeight: "600", lineHeight: 30 },
+  btnPending: {
+    height: 40,
+    paddingHorizontal: 18,
+    borderRadius: 20,
+    backgroundColor: "rgba(239,159,39,0.2)",
+    borderWidth: 1,
+    borderColor: "rgba(239,159,39,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  btnPendingText: { fontSize: 13, color: "#EF9F27", fontWeight: "600" },
   btnInfo: {
     width: 42,
     height: 42,

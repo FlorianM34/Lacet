@@ -13,6 +13,7 @@ import {
 import { router } from "expo-router";
 import * as DocumentPicker from "expo-document-picker";
 import { supabase } from "../../lib/supabase";
+import { useSessionContext } from "../../hooks/SessionContext";
 import type { HikeLevel } from "../../types";
 
 const LEVELS: { value: HikeLevel; label: string }[] = [
@@ -31,6 +32,7 @@ const LANGUAGES = [
 ];
 
 export default function OnboardingScreen() {
+  const { refreshProfile } = useSessionContext();
   const [displayName, setDisplayName] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [level, setLevel] = useState<HikeLevel>("easy");
@@ -111,7 +113,8 @@ export default function OnboardingScreen() {
 
       if (error) throw error;
 
-      router.replace("/(tabs)");
+      // Rafraîchit le profil dans le context — _layout.tsx redirige automatiquement vers /(tabs)
+      await refreshProfile();
     } catch (error: any) {
       Alert.alert("Erreur", error?.message ?? "Impossible de créer le profil.");
     } finally {
@@ -137,6 +140,7 @@ export default function OnboardingScreen() {
         value={displayName}
         onChangeText={setDisplayName}
         placeholder="Thomas C."
+        placeholderTextColor="rgba(255,255,255,0.25)"
         autoCapitalize="words"
       />
 
@@ -147,6 +151,7 @@ export default function OnboardingScreen() {
         value={birthDate}
         onChangeText={setBirthDate}
         placeholder="1990-05-15"
+        placeholderTextColor="rgba(255,255,255,0.25)"
         keyboardType={Platform.OS === "ios" ? "numbers-and-punctuation" : "default"}
       />
 
@@ -215,46 +220,48 @@ export default function OnboardingScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
+  container: { flex: 1, backgroundColor: "#0f1f14" },
   contentContainer: { padding: 32, paddingTop: 80 },
-  title: { fontSize: 28, fontWeight: "bold", color: "#2E7D32" },
-  subtitle: { fontSize: 15, color: "#666", marginTop: 8, marginBottom: 28, lineHeight: 22 },
-  label: { fontSize: 14, fontWeight: "600", color: "#333", marginTop: 20, marginBottom: 8 },
+  title: { fontSize: 28, fontWeight: "700", color: "white" },
+  subtitle: { fontSize: 15, color: "rgba(255,255,255,0.45)", marginTop: 8, marginBottom: 28, lineHeight: 22 },
+  label: { fontSize: 13, fontWeight: "500", color: "rgba(255,255,255,0.55)", marginTop: 20, marginBottom: 8 },
   input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
+    backgroundColor: "#162a1c",
+    borderWidth: 0.5,
+    borderColor: "rgba(255,255,255,0.12)",
     borderRadius: 12,
     padding: 14,
     fontSize: 16,
+    color: "white",
   },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: {
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#ccc",
+    borderWidth: 0.5,
+    borderColor: "rgba(255,255,255,0.15)",
   },
-  chipActive: { backgroundColor: "#2E7D32", borderColor: "#2E7D32" },
-  chipText: { fontSize: 14, color: "#333" },
-  chipTextActive: { color: "#fff" },
+  chipActive: { backgroundColor: "#1D9E75", borderColor: "#1D9E75" },
+  chipText: { fontSize: 14, color: "rgba(255,255,255,0.5)" },
+  chipTextActive: { color: "#fff", fontWeight: "500" },
   photoButton: {
-    borderWidth: 1,
-    borderColor: "#ccc",
+    borderWidth: 0.5,
+    borderColor: "rgba(255,255,255,0.15)",
     borderRadius: 12,
     borderStyle: "dashed",
     padding: 16,
     alignItems: "center",
   },
-  photoButtonText: { color: "#666", fontSize: 14 },
+  photoButtonText: { color: "rgba(255,255,255,0.35)", fontSize: 14 },
   button: {
-    backgroundColor: "#2E7D32",
+    backgroundColor: "#1D9E75",
     paddingVertical: 16,
     borderRadius: 12,
     marginTop: 32,
     marginBottom: 40,
     alignItems: "center",
   },
-  buttonDisabled: { opacity: 0.6 },
+  buttonDisabled: { opacity: 0.55 },
   buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
 });

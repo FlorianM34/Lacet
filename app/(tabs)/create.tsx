@@ -11,6 +11,9 @@ import {
   Modal,
   Animated,
 } from "react-native";
+import Mapbox, { MapView, Camera, ShapeSource, LineLayer, MarkerView } from "@rnmapbox/maps";
+
+Mapbox.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_TOKEN ?? "");
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as DocumentPicker from "expo-document-picker";
 import * as Location from "expo-location";
@@ -89,6 +92,7 @@ export default function CreateScreen() {
   // Groupe
   const [maxParticipants, setMaxParticipants] = useState(4);
   const [hasVehicle, setHasVehicle] = useState(true);
+  const [autoAccept, setAutoAccept] = useState(true);
 
   const [publishing, setPublishing] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -244,6 +248,7 @@ export default function CreateScreen() {
           date_start: hikeDate,
           date_flexible: dateFlexible,
           has_vehicle: hasVehicle,
+          auto_accept: autoAccept,
           max_participants: maxParticipants,
           current_count: 0,
           status: "open",
@@ -369,6 +374,64 @@ export default function CreateScreen() {
                 )}
                 {gpxLoaded && (
                   <View>
+                    {/* Mini map preview */}
+                    {coordinates.length >= 2 && (() => {
+                      const lngs = coordinates.map((c) => c[0]);
+                      const lats = coordinates.map((c) => c[1]);
+                      const bounds = {
+                        ne: [Math.max(...lngs), Math.max(...lats)] as [number, number],
+                        sw: [Math.min(...lngs), Math.min(...lats)] as [number, number],
+                        paddingTop: 24,
+                        paddingBottom: 24,
+                        paddingLeft: 24,
+                        paddingRight: 24,
+                      };
+                      const lineGeoJSON = {
+                        type: "Feature" as const,
+                        properties: {},
+                        geometry: { type: "LineString" as const, coordinates },
+                      };
+                      return (
+                        <View style={styles.mapPreviewContainer}>
+                          <MapView
+                            style={styles.mapPreview}
+                            styleURL="mapbox://styles/mapbox/outdoors-v12"
+                            scrollEnabled={false}
+                            zoomEnabled={false}
+                            rotateEnabled={false}
+                            pitchEnabled={false}
+                            attributionEnabled={false}
+                            logoEnabled={false}
+                          >
+                            <Camera bounds={bounds} animationMode="none" animationDuration={0} />
+                            <ShapeSource id="gpx-preview-route" shape={lineGeoJSON}>
+                              <LineLayer
+                                id="gpx-preview-line"
+                                style={{
+                                  lineColor: GREEN,
+                                  lineWidth: 3,
+                                  lineOpacity: 0.9,
+                                  lineCap: "round",
+                                  lineJoin: "round",
+                                }}
+                              />
+                            </ShapeSource>
+                            <MarkerView coordinate={coordinates[0]}>
+                              <View style={styles.mapMarker}>
+                                <View style={styles.mapMarkerDot} />
+                              </View>
+                            </MarkerView>
+                          </MapView>
+                          <View style={styles.mapPreviewOverlay}>
+                            <Text style={styles.mapPreviewFileName} numberOfLines={1}>
+                              {gpxFileName}
+                            </Text>
+                          </View>
+                        </View>
+                      );
+                    })()}
+
+                    {/* Stats row */}
                     <View style={styles.statsAutoRow}>
                       <View style={styles.statAuto}>
                         <Text style={styles.statAutoVal}>{distanceKm} km</Text>
@@ -545,8 +608,8 @@ export default function CreateScreen() {
             <ToggleRow
               label="Accepter automatiquement"
               sub="Sans validation de ta part"
-              value={true}
-              onChange={() => {}}
+              value={autoAccept}
+              onChange={setAutoAccept}
               last
             />
 
@@ -896,6 +959,44 @@ const styles = StyleSheet.create({
   gpxSub: { fontSize: 11, color: "rgba(255,255,255,0.4)" },
 
   // Stats auto (after GPX load)
+  mapPreviewContainer: {
+    height: 200,
+    borderRadius: 14,
+    overflow: "hidden",
+    marginBottom: 12,
+    borderWidth: 0.5,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  mapPreview: { flex: 1 },
+  mapPreviewOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: "rgba(6,16,10,0.65)",
+  },
+  mapPreviewFileName: {
+    fontSize: 11,
+    color: "rgba(255,255,255,0.6)",
+  },
+  mapMarker: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "rgba(29,158,117,0.25)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  mapMarkerDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: GREEN,
+    borderWidth: 1.5,
+    borderColor: "#fff",
+  },
   statsAutoRow: { flexDirection: "row", gap: 6, marginBottom: 6 },
   statAuto: {
     flex: 1,

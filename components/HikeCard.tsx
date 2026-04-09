@@ -22,6 +22,7 @@ interface Props {
   onSwipeLeft: () => void;
   onSwipeRight: () => void;
   isTop: boolean;
+  isPending?: boolean;
 }
 
 function formatDuration(min: number): string {
@@ -68,13 +69,13 @@ function getInitials(name: string): string {
     .slice(0, 2);
 }
 
-export default function HikeCard({ hike, onSwipeLeft, onSwipeRight, isTop }: Props) {
+export default function HikeCard({ hike, onSwipeLeft, onSwipeRight, isTop, isPending = false }: Props) {
   const translateX = useRef(new Animated.Value(0)).current;
   const likeOpacity = useRef(new Animated.Value(0)).current;
   const nopeOpacity = useRef(new Animated.Value(0)).current;
 
   const isTopRef = useRef(isTop);
-  isTopRef.current = isTop;
+  isTopRef.current = isTop && !isPending;
 
   const rotate = translateX.interpolate({
     inputRange: [-SCREEN_WIDTH, 0, SCREEN_WIDTH],
@@ -208,7 +209,7 @@ export default function HikeCard({ hike, onSwipeLeft, onSwipeRight, isTop }: Pro
       />
 
       {/* Swipe hints */}
-      {isTop && (
+      {isTop && !isPending && (
         <>
           <Animated.View style={[styles.joinHint, { opacity: likeOpacity }]}>
             <Text style={styles.joinHintText}>Rejoindre</Text>
@@ -217,6 +218,13 @@ export default function HikeCard({ hike, onSwipeLeft, onSwipeRight, isTop }: Pro
             <Text style={styles.passHintText}>Passer</Text>
           </Animated.View>
         </>
+      )}
+
+      {/* Pending badge */}
+      {isPending && isTop && (
+        <View style={styles.pendingBadge}>
+          <Text style={styles.pendingBadgeText}>⏳ En attente…</Text>
+        </View>
       )}
 
       {/* Info panel */}
@@ -342,6 +350,22 @@ const styles = StyleSheet.create({
     transform: [{ rotate: "15deg" }],
   },
   passHintText: { fontSize: 13, fontWeight: "600", color: "white" },
+
+  pendingBadge: {
+    position: "absolute",
+    top: 80,
+    alignSelf: "center",
+    left: "50%",
+    transform: [{ translateX: -60 }],
+    backgroundColor: "rgba(239,159,39,0.25)",
+    borderWidth: 1.5,
+    borderColor: "rgba(239,159,39,0.6)",
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    zIndex: 20,
+  },
+  pendingBadgeText: { fontSize: 13, fontWeight: "600", color: "#EF9F27" },
 
   // Info panel
   infoPanel: {

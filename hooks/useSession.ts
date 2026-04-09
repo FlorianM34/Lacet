@@ -50,7 +50,8 @@ export function useSession(): SessionState {
     } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s);
       if (s?.user) {
-        fetchProfile(s.user.id);
+        setLoading(true);
+        fetchProfile(s.user.id).finally(() => setLoading(false));
       } else {
         setProfile(null);
       }
